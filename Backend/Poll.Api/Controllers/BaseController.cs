@@ -1,0 +1,27 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Poll.Api.Models.Common;
+using Poll.Core.Consts.Authorization;
+
+namespace Poll.Api.Controllers;
+
+[ApiController]
+[Route("[controller]")]
+[ProducesResponseType(typeof(ApiErrorModel), StatusCodes.Status400BadRequest)]
+public abstract class BaseController : Controller
+{
+    private CurrentUser? _currentUser;
+    protected CurrentUser CurrentUser => _currentUser ??= GetCurrentUser();
+    private CurrentUser GetCurrentUser()
+    {
+        var user = HttpContext.User;
+        var id = user.Claims.FirstOrDefault(x => x.Type == Claims.IdentifierClaimType)?.Value;
+        var login = user.Claims.FirstOrDefault(x => x.Type == Claims.LoginClaimType)?.Value;
+        var role = user.Claims.FirstOrDefault(x => x.Type == Claims.RoleClaimType)?.Value;
+        if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(login) || string.IsNullOrEmpty(role))
+        {
+            throw new Exception("Пользователь не авторизован");
+        }
+
+        return new CurrentUser { Id = id, Login = login, Role = role };
+    }
+}

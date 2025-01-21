@@ -1,0 +1,135 @@
+using System.Diagnostics.CodeAnalysis;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Poll.Core.Configuration.Models;
+using Poll.Core.Interfaces;
+using Poll.Core.Services.Authorization.Dto;
+using Poll.Core.Consts.Authorization;
+
+namespace Poll.Core.Services.Authorization;
+
+public class AuthorizationService : IAuthorizationService
+{
+    private readonly ILdapService _ldapService;
+    private static TokenValidationParameters? _validationParameters;
+    private readonly JwtSettings _jwtSettings;
+
+    public AuthorizationService(ILdapService ldapService, IOptions<JwtSettings> options)
+    {
+        _ldapService = ldapService;
+        _jwtSettings = options.Value;
+        _validationParameters ??= new TokenValidationParameters
+        {
+            ClockSkew = TimeSpan.Zero,
+            ValidateLifetime = true,
+            ValidateIssuer = true,
+            ValidIssuer = _jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = _jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(_jwtSettings.Key)),
+            ValidateIssuerSigningKey = true,
+        };
+    }
+
+    public async Task<LoginResult> Login(string login, string password)
+    {
+        var user = await _ldapService.Login(login, password);
+        if (user is null)
+        {
+            throw new Exception("Неправильный логин или пароль");
+        }
+
+        // тут нужно добавить логику, при которой будем стучаться в базу данных и вытаскивать
+        // роль пользователя
+        var accessToken = CreateJwtToken(user.ObjectGuid.ToString(), login, "user", true);
+        var refreshToken = CreateJwtToken(user.ObjectGuid.ToString(), login, "user", false);
+        return new LoginResult
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken
+        };
+    }
+
+    public LoginResult RefreshToken(string refreshToken)
+    {
+        if (!ValidateToken(refreshToken, out string id, out string login, out string role))
+        {
+            throw new Exception("Неверный токен обновления");
+        }
+
+        var accessToken = CreateJwtToken(id, login, role, true);
+        var newRefreshToken = CreateJwtToken(id, login, "user", false);
+        return new LoginResult
+        {
+            AccessToken = accessToken,
+            RefreshToken = newRefreshToken  
+        };
+    }
+
+    private string CreateJwtToken(string id, string login, string role, bool isAccessToken)
+    {
+        var claims = new List<Claim>
+        {
+            new(Claims.RoleClaimType, role), new(Claims.LoginClaimType, login), new(Claims.IdentifierClaimType, id)
+        };
+        var claimsIdentity = new ClaimsIdentity(claims, "Token", Claims.LoginClaimType, Claims.RoleClaimType);
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = new SecurityTokenDescriptor
+        {
+            Audience = _jwtSettings.Audience,
+            Issuer = _jwtSettings.Issuer,
+            Subject = claimsIdentity,
+            SigningCredentials =
+                new SigningCredentials(new SymmetricSecurityKey(Convert.FromBase64String(_jwtSettings.Key)),
+                    SecurityAlgorithms.HmacSha256Signature),
+            NotBefore = DateTime.UtcNow,
+            Expires = DateTime.UtcNow.AddMinutes(isAccessToken
+                ? _jwtSettings.MinutesLifeTime
+                : _jwtSettings.MinutesRefreshTokenLifeTime)
+        };
+
+        var securityToken = tokenHandler.CreateToken(token);
+        var jwt = tokenHandler.WriteToken(securityToken);
+        return jwt;
+    }
+
+    public bool ValidateToken(string token, [NotNullWhen(true)] out string? id, [NotNullWhen(true)] out string? login, 
+        [NotNullWhen(true)] out string? role)
+    {
+        login = null;
+        role = null;
+        id = null;
+
+        try
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return false;
+            }
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            tokenHandler.ValidateToken(token, _validationParameters, out SecurityToken validatedToken);
+            var securityToken = validatedToken as JwtSecurityToken;
+            var idClaimValue = securityToken?.Claims.First(x => x.Type == Claims.IdentifierClaimType).Value;
+            var loginClaimValue = securityToken?.Claims.First(x => x.Type == Claims.LoginClaimType).Value;
+            var roleClaimValue = securityToken?.Claims.First(x => x.Type == Claims.RoleClaimType).Value;
+            if (string.IsNullOrEmpty(loginClaimValue) || string.IsNullOrEmpty(idClaimValue) 
+                                                      || string.IsNullOrEmpty(roleClaimValue))
+            {
+                return false;
+            }
+
+            id = idClaimValue;
+            login = loginClaimValue;
+            role = roleClaimValue;
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+}

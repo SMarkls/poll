@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Poll.Api", "Poll.Api\Poll.Api.csproj", "{7E53FE28-96DC-4322-B6B2-0441296BA9D5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{EE84A0E4-F01E-4E9F-B866-7EAE6A813155}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Poll.Infrastructure", "Poll.Infrastructure\Poll.Infrastructure.csproj", "{E0621F35-9428-49E1-912B-99EE4F7408E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Poll.Core", "Poll.Core\Poll.Core.csproj", "{04D3107A-CB5F-4833-B77E-2C3581BB44F5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7E53FE28-96DC-4322-B6B2-0441296BA9D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E53FE28-96DC-4322-B6B2-0441296BA9D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E53FE28-96DC-4322-B6B2-0441296BA9D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E53FE28-96DC-4322-B6B2-0441296BA9D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0621F35-9428-49E1-912B-99EE4F7408E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0621F35-9428-49E1-912B-99EE4F7408E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0621F35-9428-49E1-912B-99EE4F7408E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0621F35-9428-49E1-912B-99EE4F7408E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04D3107A-CB5F-4833-B77E-2C3581BB44F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04D3107A-CB5F-4833-B77E-2C3581BB44F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04D3107A-CB5F-4833-B77E-2C3581BB44F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04D3107A-CB5F-4833-B77E-2C3581BB44F5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
