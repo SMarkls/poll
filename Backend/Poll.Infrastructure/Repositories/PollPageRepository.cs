@@ -64,4 +64,30 @@ public class PollPageRepository : IPollPageRepository
             x => x.Pages,
             Builders<PollPage>.Filter.Eq(x => x.PageId, new ObjectId(pollPageId)));
     }
+
+    public async Task EditQuestionText(string pollId, string pollPageId, string questionId, string newHeader)
+    {
+        if (string.IsNullOrEmpty(pollId) || string.IsNullOrEmpty(pollPageId) || string.IsNullOrEmpty(questionId))
+            throw new ArgumentException("PollId, PollPageId, and QuestionId cannot be null or empty");
+
+        var filter = Builders<Core.Entities.Poll>.Filter.And(
+            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, new ObjectId(pollId)),
+            Builders<Core.Entities.Poll>.Filter.ElemMatch(
+                x => x.Pages,
+                page => page.PageId == new ObjectId(pollPageId) &&
+                        page.Questions.Any(question => question.QuestionId == new ObjectId(questionId))
+            )
+        );
+
+        var update = Builders<Core.Entities.Poll>.Update.Set(
+            x => x.Pages[-1].Questions[-1].QuestionText, newHeader
+        );
+
+        var result = await _collection.UpdateOneAsync(filter, update);
+
+        if (result.ModifiedCount == 0)
+        {
+            throw new InvalidOperationException("Question text could not be updated. Ensure the IDs are correct.");
+        }
+    }
 }
