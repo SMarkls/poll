@@ -27,7 +27,7 @@ public class PollPageRepository : IPollPageRepository
         var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, new ObjectId(pollId));
         var delete =
             Builders<Core.Entities.Poll>.Update.PullFilter(x => x.Pages,
-                Builders<PollPage>.Filter.Eq(x => x.PageId, new ObjectId(pollId)));
+                Builders<PollPage>.Filter.Eq(x => x.PageId, new ObjectId(pollPageId)));
         await _collection.UpdateOneAsync(filter, delete);
     }
 
@@ -36,18 +36,22 @@ public class PollPageRepository : IPollPageRepository
         var filter = Builders<Core.Entities.Poll>.Filter.And(
             Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, new ObjectId(pollId)),
             Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages, p => p.PageId == new ObjectId(pollPageId)));
-        var update = Builders<Core.Entities.Poll>.Update.Set("Pages.$.PageHeader", newHeader);
+        var update = Builders<Core.Entities.Poll>.Update.Set(x => x.Pages[-1].PageHeader, newHeader);
         await _collection.UpdateOneAsync(filter, update);
     }
-
-    public Task<PollPage?> GetPollPage(string pollPageId, string pollId)
+    
+    public async Task<PollPage?> GetPollPage(string pollPageId, string pollId)
     {
         var filter = Builders<Core.Entities.Poll>.Filter.And(
             Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, new ObjectId(pollId)),
-            Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages, p => p.PageId == new ObjectId(pollPageId)));
-        return _collection.FindAsync(filter).ContinueWith(x =>
-            x.Result.FirstOrDefaultAsync()
-                .ContinueWith(x => x.Result.Pages.FirstOrDefault(x => x.PageId == new ObjectId(pollPageId)))).Unwrap();
+            Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages, p => p.PageId == new ObjectId(pollPageId))
+        );
+    
+        var projection = Builders<Core.Entities.Poll>.Projection.Expression(p =>
+            p.Pages.FirstOrDefault(page => page.PageId == new ObjectId(pollPageId))
+        );
+    
+        return await _collection.Find(filter).Project(projection).FirstOrDefaultAsync();
     }
 
     public Task DeleteQuestion(string pollPageId, string pollId, string questionId)
