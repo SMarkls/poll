@@ -1,7 +1,7 @@
 using Poll.Core.Entities.Enums;
 using Poll.Core.Entities.Variants;
 
-namespace Poll.Api.Models.Dto;
+namespace Poll.Api.Models.Dto.Question;
 
 public class GetQuestionDto
 {
@@ -28,5 +28,5 @@ public class GetQuestionDto
     /// <summary>
     /// Варианты ответа.
     /// </summary>
-    public List<IBaseVariants> Variants { get; init; }
+    public BaseVariants Variants { get; init; }
 }

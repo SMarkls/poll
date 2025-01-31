@@ -1,16 +1,17 @@
-using Microsoft.AspNetCore.Mvc;
 using NLog.Extensions.Logging;
 using Poll.Api.Mappings;
 using Poll.Api.Middleware;
+using Poll.Api.Newtonsoft;
 using Poll.Api.Swagger;
 using Poll.Core;
-using Poll.Core.Configuration;
 using Poll.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureSerialization();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddLogging(options =>

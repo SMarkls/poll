@@ -24,5 +24,5 @@ public class QuestionResult
     /// <summary>
     /// Варианты ответа.
     /// </summary>
-    public List<IBaseVariants> Variants { get; init; }
+    public BaseVariants Variants { get; init; }
 }

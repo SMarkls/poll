@@ -1,0 +1,15 @@
+meta {
+  name: GetResult
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{BASE_URL}}/Poll/result/:pollId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  pollId: 6797b3c3b149091f20b6bf82
+}

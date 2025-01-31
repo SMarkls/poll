@@ -1,5 +1,8 @@
+using System.Reflection;
 using Microsoft.OpenApi.Models;
 using Poll.Api.Swagger.Filters;
+using Poll.Core.Entities.Variants;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Poll.Api.Swagger;
 
@@ -10,7 +13,7 @@ public static class SwaggerExtension
         services.AddSwaggerGen(c =>
         {
             c.OperationFilter<AddRequiredCookie>();
-            c.SwaggerDoc("v1", new OpenApiInfo { Version = "v1" });
+            c.SwaggerDoc("v1", new OpenApiInfo { Version = "v1", Title = "API для сервиса опросов" });
             c.DescribeAllParametersInCamelCase();
 
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -20,18 +23,17 @@ public static class SwaggerExtension
                 Scheme = "Bearer",
                 BearerFormat = "JWT",
                 In = ParameterLocation.Header,
-                Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 1safsfsdfdfd\"",
+                Description =
+                    "Авторизация на основе JWT, используя схему Bearer. \r\n\r\n" +
+                    "Введите 'Bearer' [space] и вставьте свой токен.\r\n\r\n" +
+                    "Например: \"Bearer eydslkfjhuh.\"",
             });
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
                     new OpenApiSecurityScheme
                     {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
+                        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
                     },
                     []
                 }

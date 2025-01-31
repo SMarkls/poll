@@ -1,0 +1,27 @@
+meta {
+  name: Update
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{BASE_URL}}/Poll
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "pollId": "678e029769404c2815ec0ed3",
+    "pollName": "Неплохое такое голосование",
+    "startTime": "2025-01-27T13:55:10.327Z",
+    "endTime": "2026-01-27T13:55:10.327Z",
+    "isOver": false,
+    "departmentIds": [
+      "string"
+    ],
+    "employeeIds": [
+      "string"
+    ]
+  }
+}

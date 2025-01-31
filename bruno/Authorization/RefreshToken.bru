@@ -1,0 +1,19 @@
+meta {
+  name: RefreshToken
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{BASE_URL}}/Authorization/RefreshToken
+  body: json
+  auth: inherit
+}
+
+script:pre-request {
+  const cookie = bru.getEnvVar("COOKIE");
+  
+  if(cookie) {
+    req.setHeader("Cookie", cookie)
+  }
+}

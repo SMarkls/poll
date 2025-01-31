@@ -24,14 +24,14 @@ public class PollController : BaseController
     {
         dto.OwnerId = CurrentUser.Id;
         var entity = _mapper.Map<Core.Entities.Poll>(dto);
-        return Ok(await _service.AddPoll(entity));
+        return Ok(await _service.AddPoll(entity, HttpContext.RequestAborted));
     }
 
     [HttpDelete]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(string pollId)
     {
-        var entity = await _service.Get(pollId);
+        var entity = await _service.Get(pollId, HttpContext.RequestAborted);
         if (entity is null)
         {
             return BadRequest("Опрос не найден");
@@ -42,15 +42,15 @@ public class PollController : BaseController
             return BadRequest("Вы не являетесь автором опроса.");
         }
 
-        await _service.Delete(pollId);
-        return Ok();
+        await _service.Delete(pollId, HttpContext.RequestAborted);
+        return NoContent();
     }
 
     [HttpGet("{pollId}")]
     [ProducesResponseType<GetPollDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(string pollId) 
-    {   
-        var entity = await _service.Get(pollId);
+    {
+        var entity = await _service.Get(pollId, HttpContext.RequestAborted);
         if (entity is null)
         {
             return BadRequest("Опрос не найден");
@@ -70,7 +70,7 @@ public class PollController : BaseController
     [ProducesResponseType<ResultDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetResult(string pollId)
     {
-        var entity = await _service.Get(pollId);
+        var entity = await _service.Get(pollId, HttpContext.RequestAborted);
         if (entity?.OwnerId == CurrentUser.Id)
         {
             return Ok(_mapper.Map<ResultDto>(entity));
@@ -84,7 +84,7 @@ public class PollController : BaseController
     public async Task<IActionResult> GetAll()
     {
         var userId = CurrentUser.Id; 
-        var polls = await _service.GetAll(userId);
+        var polls = await _service.GetAll(userId, HttpContext.RequestAborted);
         var pollsDto = _mapper.ProjectTo<GetAllPollsDto>(polls.AsQueryable()).ToList();
         return Ok(pollsDto);
     }
@@ -93,7 +93,7 @@ public class PollController : BaseController
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Update(UpdatePollDto dto)
     {
-        var storedEntity = await _service.Get(dto.PollId);
+        var storedEntity = await _service.Get(dto.PollId, HttpContext.RequestAborted);
         if (storedEntity is null)
         {
             return BadRequest("Опрос не найден");
@@ -103,8 +103,9 @@ public class PollController : BaseController
         {
             return BadRequest("Вы не являетесь автором опроса.");
         }
+
         var entity = _mapper.Map<Core.Entities.Poll>(dto);
-        await _service.Update(entity);
+        await _service.Update(entity, HttpContext.RequestAborted);
         return NoContent();
     }
 }

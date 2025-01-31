@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Poll.Core.Services.Authorization;
 using Poll.Core.Services.Poll;
+using Poll.Core.Services.PollPage;
 
 namespace Poll.Core;
 
@@ -16,6 +17,7 @@ public static class DependencyInjection
     {
         return services
             .AddTransient<IPollService, PollService>()
-            .AddTransient<IAuthorizationService, AuthorizationService>();
+            .AddTransient<IAuthorizationService, AuthorizationService>()
+            .AddTransient<IPollPageService, PollPageService>();
     }
 }

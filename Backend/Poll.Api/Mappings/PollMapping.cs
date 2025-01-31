@@ -10,6 +10,8 @@ public class PollMapping : Profile
     {
         CreateMap<AddPollDto, Core.Entities.Poll>();
 
+        CreateMap<UpdatePollDto, Core.Entities.Poll>();
+
         CreateMap<Core.Entities.Poll, GetPollDto>();
 
         CreateMap<Core.Entities.Poll, GetAllPollsDto>();

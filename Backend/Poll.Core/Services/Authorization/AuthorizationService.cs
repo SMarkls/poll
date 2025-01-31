@@ -33,7 +33,7 @@ public class AuthorizationService : IAuthorizationService
         };
     }
 
-    public async Task<LoginResult> Login(string login, string password)
+    public async Task<LoginResult> Login(string login, string password, CancellationToken ct)
     {
         var user = await _ldapService.Login(login, password);
         if (user is null)

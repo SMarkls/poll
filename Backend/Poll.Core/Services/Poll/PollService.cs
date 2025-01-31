@@ -11,28 +11,28 @@ public class PollService : IPollService
         _repository = repository;
     }
 
-    public Task<string> AddPoll(Entities.Poll poll)
+    public Task<string> AddPoll(Entities.Poll poll, CancellationToken ct)
     {
-        return _repository.Add(poll);
+        return _repository.Add(poll, ct);
     }
 
-    public Task Delete(string pollId)
+    public Task Delete(string pollId, CancellationToken ct)
     {
-        return _repository.Delete(pollId);
+        return _repository.Delete(pollId, ct);
     }
 
-    public Task<Entities.Poll?> Get(string pollId)
+    public Task<Entities.Poll?> Get(string pollId, CancellationToken ct)
     {
-        return _repository.GetById(pollId);
+        return _repository.GetById(pollId, ct);
     }
 
-    public Task Update(Entities.Poll poll)
+    public Task Update(Entities.Poll poll, CancellationToken ct)
     {
-       return _repository.Update(poll);
+       return _repository.Update(poll, ct);
     }
 
-    public Task<List<Entities.Poll>> GetAll(string userId)
+    public Task<List<Entities.Poll>> GetAll(string userId, CancellationToken ct)
     {
-        return _repository.GetAll(userId);
+        return _repository.GetAll(userId, ct);
     }
 }

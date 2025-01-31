@@ -12,7 +12,7 @@ public class PollPage
     /// Идентификатор страницы
     /// </summary>
     [BsonId]
-    public ObjectId PageId { get; init; }
+    public ObjectId PageId { get; set; }
 
     /// <summary>
     /// Заголовок страницы.

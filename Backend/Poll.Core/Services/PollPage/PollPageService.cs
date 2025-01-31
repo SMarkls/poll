@@ -11,28 +11,33 @@ public class PollPageService : IPollPageService
         _repository = repository;
     }
 
-    public Task<Entities.PollPage?> GetPollPage(string pollPageId, string pollId)
+    public Task<Entities.PollPage?> GetPollPage(string pollPageId, string pollId, CancellationToken ct)
     {
-        return _repository.GetPollPage(pollPageId, pollId);
+        return _repository.GetPollPage(pollPageId, pollId, ct);
     }
 
-    public Task<string> AddPollPage(Entities.PollPage pollPage, string pollId)
+    public Task<string> AddPollPage(Entities.PollPage pollPage, string pollId, CancellationToken ct)
     {
-        return _repository.AddPollPage(pollPage, pollId);
+        return _repository.AddPollPage(pollPage, pollId, ct);
     }
 
-    public Task UpdateHeader(string pollPageId, string pollId, string header)
+    public Task UpdateHeader(string pollPageId, string pollId, string header, CancellationToken ct)
     {
-        return _repository.UpdateHeader(pollPageId, pollId, header);
+        return _repository.UpdateHeader(pollPageId, pollId, header, ct);
     }
 
-    public Task RemovePollPage(string pollPageId, string pollId)
+    public Task RemovePollPage(string pollPageId, string pollId, CancellationToken ct)
     {
-        return _repository.RemovePollPage(pollPageId, pollId);
+        return _repository.RemovePollPage(pollPageId, pollId, ct);
     }
 
-    public Task DeleteQuestion(string pollPageId, string pollId, string questionId)
+    public Task DeleteQuestion(string pollPageId, string pollId, string questionId, CancellationToken ct)
     {
-        return _repository.DeleteQuestion(pollPageId, pollId, questionId);
+        return _repository.DeleteQuestion(pollPageId, pollId, questionId, ct);
+    }
+
+    public Task EditQuestionText(string pollPageId, string pollId, string questionId, string text, CancellationToken ct)
+    {
+        return _repository.EditQuestionText(pollPageId, pollId, questionId, text, ct);
     }
 }

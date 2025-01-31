@@ -9,6 +9,8 @@ namespace Poll.Api.Controllers;
 
 public record PollArgs(string PollPageId, string PollId);
 
+public record QuestionArgs(string PollId, string QuestionId);
+
 public class PollPageController : BaseController
 {
     private readonly IPollPageService _service;
@@ -26,10 +28,10 @@ public class PollPageController : BaseController
     [ProducesResponseType<GetPollPageDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Get([FromQuery] PollArgs args)
     {
-        var entity = await _service.GetPollPage(args.PollPageId, args.PollId);
+        var entity = await _service.GetPollPage(args.PollPageId, args.PollId, HttpContext.RequestAborted);
         if (entity is null)
         {
-            return BadRequest("Опрос не найден");
+            return BadRequest("Страница опроса не найдена");
         }
 
         var dto = _mapper.Map<GetPollPageDto>(entity);
@@ -41,13 +43,13 @@ public class PollPageController : BaseController
     public async Task<IActionResult> Add(AddPollPageDto dto)
     {
         var entity = _mapper.Map<PollPage>(dto);
-        var poll = await _pollService.Get(dto.PollId);
+        var poll = await _pollService.Get(dto.PollId, HttpContext.RequestAborted);
         if (poll?.OwnerId != CurrentUser.Id)
         {
             return BadRequest("Вы не являетесь создателем опроса.");
         }
 
-        var result = await _service.AddPollPage(entity, dto.PollId);
+        var result = await _service.AddPollPage(entity, dto.PollId, HttpContext.RequestAborted);
         return Ok(result);
     }
 
@@ -55,7 +57,7 @@ public class PollPageController : BaseController
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete([FromQuery] PollArgs args)
     {
-        await _service.RemovePollPage(args.PollPageId, args.PollId);
+        await _service.RemovePollPage(args.PollPageId, args.PollId, HttpContext.RequestAborted);
         return NoContent();
     }
 
@@ -63,13 +65,24 @@ public class PollPageController : BaseController
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateHeader([FromQuery] PollArgs args, [FromBody] string header)
     {
-        await _service.UpdateHeader(args.PollPageId, args.PollId, header);
+        await _service.UpdateHeader(args.PollPageId, args.PollId, header, HttpContext.RequestAborted);
         return NoContent();
     }
 
-    [HttpDelete("question/{id}")]
-    public async Task<IActionResult> DeleteQuestion([FromRoute] int id)
+    [HttpDelete("{pollPageId}/question")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteQuestion([FromQuery] QuestionArgs args, [FromRoute] string pollPageId)
     {
-        _service.DeleteQuestion();
+        await _service.DeleteQuestion(pollPageId, args.PollId, args.QuestionId, HttpContext.RequestAborted);
+        return NoContent();
+    }
+
+    [HttpPatch("{pollPageId}/question")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> EditQuestionText([FromQuery] QuestionArgs args, 
+        [FromRoute] string pollPageId, [FromBody] string text)
+    {
+        await _service.EditQuestionText(pollPageId, args.PollId, args.QuestionId, text, HttpContext.RequestAborted);
+        return NoContent();
     }
 }

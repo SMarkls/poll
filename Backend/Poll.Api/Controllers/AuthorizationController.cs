@@ -23,7 +23,7 @@ public class AuthorizationController : BaseController
     [ProducesResponseType<LoginResult>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
-        var result = await _authorizationService.Login(dto.Login, dto.Password);
+        var result = await _authorizationService.Login(dto.Login, dto.Password, HttpContext.RequestAborted);
         HttpContext.Response.Cookies.Append("RefreshToken", result.RefreshToken,
             new CookieOptions
             {
@@ -35,7 +35,7 @@ public class AuthorizationController : BaseController
         return Ok(new LoginResult { AccessToken = result.AccessToken, ExpiresIn = _jwtSettings.MinutesLifeTime });
     }
 
-    [HttpGet]
+    [HttpPost]
     [ProducesResponseType<LoginResult>(StatusCodes.Status200OK)]
     [CookieRequired("RefreshToken", "Токен обновления")]
     public IActionResult RefreshToken()

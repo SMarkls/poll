@@ -9,7 +9,7 @@ public class PollPageMapping : Profile
 {
     public PollPageMapping()
     {
-        CreateMap<PollPage, GetPollDto>();
+        CreateMap<PollPage, GetPollPageDto>();
 
         CreateMap<AddPollPageDto, PollPage>();
 

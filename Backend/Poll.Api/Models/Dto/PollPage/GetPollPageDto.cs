@@ -1,3 +1,5 @@
+using Poll.Api.Models.Dto.Question;
+
 namespace Poll.Api.Models.Dto.PollPage;
 
 public class GetPollPageDto
@@ -15,5 +17,5 @@ public class GetPollPageDto
     /// <summary>
     /// Список идентификаторов вопросов.
     /// </summary>
-    public List<string> Questions { get; init; } = [];
+    public List<GetQuestionDto> Questions { get; init; } = [];
 }
