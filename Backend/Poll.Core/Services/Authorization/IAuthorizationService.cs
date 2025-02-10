@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Poll.Core.Entities.Ldap;
 using Poll.Core.Services.Authorization.Dto;
 
 namespace Poll.Core.Services.Authorization;
@@ -9,5 +10,5 @@ public interface IAuthorizationService
     LoginResult RefreshToken(string refreshToken);
 
     bool ValidateToken(string token, [NotNullWhen(true)] out string? id, [NotNullWhen(true)] out string? login,
-        [NotNullWhen(true)] out string? role);
+        [NotNullWhen(true)] out UserRole role);
 }

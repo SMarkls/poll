@@ -7,6 +7,7 @@ using Poll.Core.Configuration.Models;
 using Poll.Core.Interfaces;
 using Poll.Core.Services.Authorization.Dto;
 using Poll.Core.Consts.Authorization;
+using Poll.Core.Entities.Ldap;
 
 namespace Poll.Core.Services.Authorization;
 
@@ -41,10 +42,8 @@ public class AuthorizationService : IAuthorizationService
             throw new Exception("Неправильный логин или пароль");
         }
 
-        // тут нужно добавить логику, при которой будем стучаться в базу данных и вытаскивать
-        // роль пользователя
-        var accessToken = CreateJwtToken(user.ObjectGuid.ToString(), login, "user", true);
-        var refreshToken = CreateJwtToken(user.ObjectGuid.ToString(), login, "user", false);
+        var accessToken = CreateJwtToken(user.ObjectGuid.ToString(), login, user.Role, true);
+        var refreshToken = CreateJwtToken(user.ObjectGuid.ToString(), login, user.Role, false);
         return new LoginResult
         {
             AccessToken = accessToken,
@@ -54,13 +53,13 @@ public class AuthorizationService : IAuthorizationService
 
     public LoginResult RefreshToken(string refreshToken)
     {
-        if (!ValidateToken(refreshToken, out string id, out string login, out string role))
+        if (!ValidateToken(refreshToken, out string? id, out string? login, out UserRole role))
         {
             throw new Exception("Неверный токен обновления");
         }
 
         var accessToken = CreateJwtToken(id, login, role, true);
-        var newRefreshToken = CreateJwtToken(id, login, "user", false);
+        var newRefreshToken = CreateJwtToken(id, login, role, false);
         return new LoginResult
         {
             AccessToken = accessToken,
@@ -68,14 +67,16 @@ public class AuthorizationService : IAuthorizationService
         };
     }
 
-    private string CreateJwtToken(string id, string login, string role, bool isAccessToken)
+    private string CreateJwtToken(string id, string login, UserRole role, bool isAccessToken)
     {
         var claims = new List<Claim>
         {
-            new(Claims.RoleClaimType, role), new(Claims.LoginClaimType, login), new(Claims.IdentifierClaimType, id)
+            new(Claims.RoleClaimType, role.ToString()),
+            new(Claims.LoginClaimType, login),
+            new(Claims.IdentifierClaimType, id)
         };
-        var claimsIdentity = new ClaimsIdentity(claims, "Token", Claims.LoginClaimType, Claims.RoleClaimType);
 
+        var claimsIdentity = new ClaimsIdentity(claims, "Token", Claims.LoginClaimType, Claims.RoleClaimType);
         var tokenHandler = new JwtSecurityTokenHandler();
         var token = new SecurityTokenDescriptor
         {
@@ -97,10 +98,10 @@ public class AuthorizationService : IAuthorizationService
     }
 
     public bool ValidateToken(string token, [NotNullWhen(true)] out string? id, [NotNullWhen(true)] out string? login, 
-        [NotNullWhen(true)] out string? role)
+         out UserRole role)
     {
         login = null;
-        role = null;
+        role = UserRole.None;
         id = null;
 
         try
@@ -124,8 +125,7 @@ public class AuthorizationService : IAuthorizationService
 
             id = idClaimValue;
             login = loginClaimValue;
-            role = roleClaimValue;
-            return true;
+            return Enum.TryParse(roleClaimValue, out role);
         }
         catch (Exception)
         {

@@ -38,6 +38,8 @@ public static class SwaggerExtension
                     []
                 }
             });
+
+            c.IncludeXmlComments(Path.Combine(System.AppContext.BaseDirectory, "Poll.Api.xml"));
         });
 
         return services;

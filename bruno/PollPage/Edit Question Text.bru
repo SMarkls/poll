@@ -1,0 +1,28 @@
+meta {
+  name: Edit Question Text
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{BASE_URL}}/PollPage/:pollPageId/question?pollId=679a01bedd5c68534e74c90d&questionId=679a0e3eff3bc13181eb542b
+  body: json
+  auth: none
+}
+
+params:query {
+  pollId: 679a01bedd5c68534e74c90d
+  questionId: 679a0e3eff3bc13181eb542b
+}
+
+params:path {
+  pollPageId: 679a0e3eff3bc13181eb542a
+}
+
+body:json {
+  "АХАХ"
+}
+
+body:text {
+  HEADER VALUE
+}

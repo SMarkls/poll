@@ -105,4 +105,27 @@ public class PollPageRepository : IPollPageRepository
             throw new InvalidOperationException("Текст вопроса не был обновлен.");
         }
     }
+
+    public async Task<string> AddQuestion(string pollPageId, string pollId, Question question, CancellationToken ct)
+    {
+        question.QuestionId = ObjectId.GenerateNewId();
+        const string updateString = "Pages.$[i].Questions";
+        var update = Builders<Core.Entities.Poll>.Update.Push(updateString, question);
+        var arrayFilters = new List<ArrayFilterDefinition<Core.Entities.Poll>>
+        {
+            new BsonDocumentArrayFilterDefinition<Core.Entities.Poll>(new BsonDocument("i._id",
+                ObjectId.Parse(pollPageId))),
+        };
+
+        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId));
+        var result =
+            await _collection.UpdateOneAsync(filter, update, new UpdateOptions { ArrayFilters = arrayFilters }, ct);
+
+        if (result.ModifiedCount == 0)
+        {
+            throw new InvalidOperationException("Вопрос не был добавлен");
+        }
+
+        return question.QuestionId.ToString();
+    }
 }

@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 using Poll.Core.Entities.Answers;
 using Poll.Core.Entities.Enums;
 using Poll.Core.Entities.Variants;
+using Poll.Core.Entities.ViewRules;
 
 namespace Poll.Core.Entities;
 
@@ -41,4 +42,9 @@ public class Question
     /// Варианты ответа.
     /// </summary>
     public BaseVariants Variants { get; init; }
+
+    /// <summary>
+    /// Правило отображения вопроса.
+    /// </summary>
+    public ViewRule? ViewRule { get; init; } 
 }

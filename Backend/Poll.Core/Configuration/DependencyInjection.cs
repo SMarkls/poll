@@ -8,6 +8,9 @@ public static class DependencyInjection
     public static IServiceCollection RegisterConfiguration(this IServiceCollection services)
     {
         return services
+#if DEBUG
+            .RegisterOptionsWithValidation<TestingSettings>()
+#endif
             .RegisterOptionsWithValidation<MongoConfiguration>()
             .RegisterOptionsWithValidation<LdapSettings>()
             .RegisterOptionsWithValidation<JwtSettings>();

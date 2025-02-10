@@ -9,6 +9,7 @@ namespace Poll.Api.Controllers;
 [ProducesResponseType(typeof(ApiErrorModel), StatusCodes.Status400BadRequest)]
 public abstract class BaseController : Controller
 {
+    protected CancellationToken Ct => HttpContext.RequestAborted;
     private CurrentUser? _currentUser;
     protected CurrentUser CurrentUser => _currentUser ??= GetCurrentUser();
     private CurrentUser GetCurrentUser()

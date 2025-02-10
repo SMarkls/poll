@@ -10,4 +10,5 @@ public interface IPollPageRepository
     Task<PollPage?> GetPollPage(string pollPageId, string pollId, CancellationToken ct);
     Task DeleteQuestion(string pollPageId, string pollId, string questionId, CancellationToken ct);
     Task EditQuestionText(string pollPageId, string pollId, string questionId, string newHeader, CancellationToken ct);
+    Task<string> AddQuestion(string pollPageId, string pollId, Question question, CancellationToken ct);
 }

@@ -1,3 +1,4 @@
+using Poll.Core.Entities;
 using Poll.Core.Interfaces;
 
 namespace Poll.Core.Services.PollPage;
@@ -39,5 +40,10 @@ public class PollPageService : IPollPageService
     public Task EditQuestionText(string pollPageId, string pollId, string questionId, string text, CancellationToken ct)
     {
         return _repository.EditQuestionText(pollPageId, pollId, questionId, text, ct);
+    }
+
+    public Task<string> AddQuestion(string pollPageId, string pollId, Question question, CancellationToken ct)
+    {
+        return _repository.AddQuestion(pollPageId, pollId, question, ct);
     }
 }

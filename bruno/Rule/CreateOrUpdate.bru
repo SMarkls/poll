@@ -1,0 +1,33 @@
+meta {
+  name: CreateOrUpdate
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{BASE_URL}}/Rules?pollId=VALUE&pollPageId=VALUE&questionId=VALUE
+  body: json
+  auth: inherit
+}
+
+params:query {
+  pollId: VALUE
+  pollPageId: VALUE
+  questionId: VALUE
+}
+
+body:json {
+  {
+    "ruleId": {},
+    "effect": 0,
+    "rules": [
+      [
+        {
+          "questionId": {},
+          "value": "string",
+          "type": 0
+        }
+      ]
+    ]
+  }
+}

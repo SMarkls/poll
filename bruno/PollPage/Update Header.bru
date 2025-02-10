@@ -1,0 +1,24 @@
+meta {
+  name: Update Header
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{BASE_URL}}/PollPage?pollPageId=VALUE&pollId=VALUE
+  body: text
+  auth: none
+}
+
+params:query {
+  pollPageId: VALUE
+  pollId: VALUE
+}
+
+body:json {
+  HEADER VALUE
+}
+
+body:text {
+  HEADER VALUE
+}

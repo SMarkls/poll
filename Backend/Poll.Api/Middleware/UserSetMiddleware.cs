@@ -16,7 +16,7 @@ public class UserSetMiddleware(RequestDelegate next)
                 {
                     new(Core.Consts.Authorization.Claims.IdentifierClaimType, id),
                     new(Core.Consts.Authorization.Claims.LoginClaimType, login),
-                    new(Core.Consts.Authorization.Claims.RoleClaimType, role)
+                    new(Core.Consts.Authorization.Claims.RoleClaimType, role.ToString())
                 })
             });
         }

@@ -1,5 +1,8 @@
 namespace Poll.Api.Models.Dto.Poll;
 
+/// <summary>
+/// Объект передачи данных получения списка всех опросов.
+/// </summary>
 public class GetAllPollsDto
 {
     /// <summary>

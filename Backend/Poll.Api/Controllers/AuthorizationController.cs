@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Poll.Api.Filters;
 using Poll.Api.Models.Dto.Authorization;
 using Poll.Api.Swagger.Attributes;
 using Poll.Core.Configuration.Models;
-using Poll.Core.Services.Authorization;
+using Poll.Core.Entities.Ldap;
+using IAuthorizationService = Poll.Core.Services.Authorization.IAuthorizationService;
 
 namespace Poll.Api.Controllers;
 
@@ -19,11 +22,17 @@ public class AuthorizationController : BaseController
         _authorizationService = authorizationService;
     }
 
+    /// <summary>
+    /// Авторизоваться.
+    /// </summary>
+    /// <param name="dto">Логин и пароль.</param>
+    /// <returns>Токен доступа и токен обновления.</returns>
     [HttpPost]
     [ProducesResponseType<LoginResult>(StatusCodes.Status200OK)]
+    [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
-        var result = await _authorizationService.Login(dto.Login, dto.Password, HttpContext.RequestAborted);
+        var result = await _authorizationService.Login(dto.Login, dto.Password, Ct);
         HttpContext.Response.Cookies.Append("RefreshToken", result.RefreshToken,
             new CookieOptions
             {
@@ -35,9 +44,14 @@ public class AuthorizationController : BaseController
         return Ok(new LoginResult { AccessToken = result.AccessToken, ExpiresIn = _jwtSettings.MinutesLifeTime });
     }
 
+    /// <summary>
+    /// Обновить токен доступа.
+    /// </summary>
+    /// <returns>Токен обновления и токен доступа.</returns>
     [HttpPost]
     [ProducesResponseType<LoginResult>(StatusCodes.Status200OK)]
     [CookieRequired("RefreshToken", "Токен обновления")]
+    [AuthorizedOnly(UserRoles = [])]
     public IActionResult RefreshToken()
     {
         var refreshToken = HttpContext.Request.Cookies["RefreshToken"];

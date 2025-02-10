@@ -1,3 +1,5 @@
+using Poll.Core.Entities;
+
 namespace Poll.Core.Services.PollPage;
 
 public interface IPollPageService
@@ -8,4 +10,5 @@ public interface IPollPageService
     Task RemovePollPage(string pollPageId, string pollId, CancellationToken ct);
     Task DeleteQuestion(string pollPageId, string pollId, string questionId, CancellationToken ct);
     Task EditQuestionText(string pollPageId, string pollId, string questionId, string text, CancellationToken ct);
+    Task<string> AddQuestion(string pollPageId, string pollId, Question question, CancellationToken ct);
 }

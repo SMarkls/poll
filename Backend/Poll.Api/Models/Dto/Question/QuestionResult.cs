@@ -4,6 +4,9 @@ using Poll.Core.Entities.Variants;
 
 namespace Poll.Api.Models.Dto.Question;
 
+/// <summary>
+/// Объект передачи данных получения результата опроса для вопроса.
+/// </summary>
 public class QuestionResult
 {
     /// <summary>

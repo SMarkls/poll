@@ -2,6 +2,9 @@ using Poll.Api.Models.Dto.Question;
 
 namespace Poll.Api.Models.Dto.PollPage;
 
+/// <summary>
+/// Объект передачи данных получения странииы опроса.
+/// </summary>
 public class GetPollPageDto
 {
     /// <summary>
