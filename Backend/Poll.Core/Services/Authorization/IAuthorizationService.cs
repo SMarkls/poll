@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Poll.Core.Entities.Ldap;
-using Poll.Core.Services.Authorization.Dto;
 
 namespace Poll.Core.Services.Authorization;
 

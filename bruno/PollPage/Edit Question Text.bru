@@ -5,17 +5,14 @@ meta {
 }
 
 patch {
-  url: {{BASE_URL}}/PollPage/:pollPageId/question?pollId=679a01bedd5c68534e74c90d&questionId=679a0e3eff3bc13181eb542b
+  url: {{BASE_URL}}/Poll/:pollId/PollPage/:pollPageId/Question/:questionId/
   body: json
-  auth: none
-}
-
-params:query {
-  pollId: 679a01bedd5c68534e74c90d
-  questionId: 679a0e3eff3bc13181eb542b
+  auth: inherit
 }
 
 params:path {
+  questionId: 679a0e3eff3bc13181eb542b
+  pollId: 679a01bedd5c68534e74c90d
   pollPageId: 679a0e3eff3bc13181eb542a
 }
 

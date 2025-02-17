@@ -5,11 +5,13 @@ using Poll.Api.Filters;
 using Poll.Api.Models.Dto.Authorization;
 using Poll.Api.Swagger.Attributes;
 using Poll.Core.Configuration.Models;
-using Poll.Core.Entities.Ldap;
 using IAuthorizationService = Poll.Core.Services.Authorization.IAuthorizationService;
 
 namespace Poll.Api.Controllers;
 
+/// <summary>
+/// Контроллер авторизации.
+/// </summary>
 [Route("[controller]/[action]")]
 public class AuthorizationController : BaseController
 {

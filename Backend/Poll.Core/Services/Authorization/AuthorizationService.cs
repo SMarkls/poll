@@ -5,7 +5,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Poll.Core.Configuration.Models;
 using Poll.Core.Interfaces;
-using Poll.Core.Services.Authorization.Dto;
 using Poll.Core.Consts.Authorization;
 using Poll.Core.Entities.Ldap;
 
@@ -44,11 +43,7 @@ public class AuthorizationService : IAuthorizationService
 
         var accessToken = CreateJwtToken(user.ObjectGuid.ToString(), login, user.Role, true);
         var refreshToken = CreateJwtToken(user.ObjectGuid.ToString(), login, user.Role, false);
-        return new LoginResult
-        {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken
-        };
+        return new LoginResult(accessToken, refreshToken);
     }
 
     public LoginResult RefreshToken(string refreshToken)
@@ -60,11 +55,7 @@ public class AuthorizationService : IAuthorizationService
 
         var accessToken = CreateJwtToken(id, login, role, true);
         var newRefreshToken = CreateJwtToken(id, login, role, false);
-        return new LoginResult
-        {
-            AccessToken = accessToken,
-            RefreshToken = newRefreshToken  
-        };
+        return new LoginResult(accessToken, newRefreshToken);
     }
 
     private string CreateJwtToken(string id, string login, UserRole role, bool isAccessToken)

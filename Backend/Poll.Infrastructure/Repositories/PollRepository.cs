@@ -2,13 +2,13 @@ using System.Linq.Expressions;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Poll.Core.Entities.Answers;
 using Poll.Core.Interfaces;
 using Poll.Infrastructure.MongoConnection;
 
 namespace Poll.Infrastructure.Repositories;
 
-public class PollRepository
-    : IRepository<Core.Entities.Poll>
+public class PollRepository : IPollRepository
 {
     private readonly ILogger<PollRepository> _logger;
     private readonly IMongoCollection<Core.Entities.Poll> _collection;
@@ -80,5 +80,57 @@ public class PollRepository
     public async Task Delete(string id, CancellationToken ct)
     {
         await _collection.DeleteOneAsync(x => x.PollId == ObjectId.Parse(id), cancellationToken: ct);
+    }
+
+    public async Task<string> GetOwnerId(string pollId, CancellationToken ct)
+    {
+        var projection = Builders<Core.Entities.Poll>.Projection.Include(x => x.OwnerId);
+        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId));
+        var result = await _collection.Find(filter)
+            .Project(projection)
+            .FirstOrDefaultAsync(cancellationToken: ct);
+
+        if (result != null)
+        {
+            return result["OwnerId"].ToString() ?? String.Empty;
+        }
+
+        return string.Empty;
+    }
+
+    public async Task Complete(string pollIdValue, string userId, CompletePollDto dto, CancellationToken ct)
+    {
+        var pollId = ObjectId.Parse(pollIdValue);
+        var updates = new List<WriteModel<Core.Entities.Poll>>();
+    
+        // 1. Добавить пользователя в PassedEmployees (без дубликатов)
+        var passedEmployeesUpdate = Builders<Core.Entities.Poll>.Update
+            .AddToSet(p => p.PassedEmployees, userId);
+    
+        updates.Add(new UpdateOneModel<Core.Entities.Poll>(
+            Builders<Core.Entities.Poll>.Filter.Eq(p => p.PollId, pollId),
+            passedEmployeesUpdate
+        ));
+
+        // 2. Обработка ответов
+        foreach (var dtoPage in dto.Pages)
+        {
+            foreach (var dtoQuestion in dtoPage.Questions)
+            {
+                var questionId = ObjectId.Parse(dtoQuestion.QuestionId);
+                var answerPath = $"Answers.{questionId}.{userId}";
+
+                var answerUpdate = Builders<Core.Entities.Poll>.Update
+                    .Set(answerPath, dtoQuestion.Value);
+
+                updates.Add(new UpdateOneModel<Core.Entities.Poll>(
+                    Builders<Core.Entities.Poll>.Filter.Eq(p => p.PollId, pollId),
+                    answerUpdate
+                ));
+            }
+        }
+
+        // 3. Выполнить все обновления одной операцией
+        await _collection.BulkWriteAsync(updates, cancellationToken: ct);
     }
 }

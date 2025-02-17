@@ -19,11 +19,6 @@ public class Question
     public ObjectId QuestionId { get; set; }
 
     /// <summary>
-    /// Идентификатор страницы, на которой находится опрос.
-    /// </summary>
-    public string PageId { get; init; }
-
-    /// <summary>
     /// Текст вопроса.
     /// </summary>
     public string QuestionText { get; init; }
@@ -32,11 +27,6 @@ public class Question
     /// Тип вопроса.
     /// </summary>
     public QuestionType QuestionType { get; init; }
-
-    /// <summary>
-    /// Ответы на вопрос.
-    /// </summary> 
-    public List<QuestionAnswer> Answers { get; init; } = [];
 
     /// <summary>
     /// Варианты ответа.

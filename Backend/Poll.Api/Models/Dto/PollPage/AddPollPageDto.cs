@@ -9,9 +9,4 @@ public class AddPollPageDto
     /// Заголовок страницы
     /// </summary>
     public string PageHeader { get; init; } = "";
-
-    /// <summary>
-    /// Идентификатор опроса.
-    /// </summary>
-    public string PollId { get; init; }
 }

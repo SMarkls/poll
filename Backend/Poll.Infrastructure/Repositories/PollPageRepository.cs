@@ -15,7 +15,7 @@ public class PollPageRepository : IPollPageRepository
         _collection = collectionFactory.GetCollection();
     }
 
-    public async Task<string> AddPollPage(PollPage pollPage, string pollId, CancellationToken ct)
+    public async Task<string> AddPollPage(string pollId, PollPage pollPage, CancellationToken ct)
     {
         pollPage.PageId = ObjectId.GenerateNewId();
         pollPage.Questions.ForEach(x => x.QuestionId = ObjectId.GenerateNewId());
@@ -25,7 +25,7 @@ public class PollPageRepository : IPollPageRepository
         return pollPage.PageId.ToString();
     }
 
-    public async Task RemovePollPage(string pollPageId, string pollId, CancellationToken ct)
+    public async Task RemovePollPage(string pollId, string pollPageId, CancellationToken ct)
     {
         var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId));
         var delete =
@@ -34,7 +34,7 @@ public class PollPageRepository : IPollPageRepository
         await _collection.UpdateOneAsync(filter, delete);
     }
 
-    public async Task UpdateHeader(string pollPageId, string pollId, string newHeader, CancellationToken ct)
+    public async Task UpdateHeader(string pollId, string pollPageId, string newHeader, CancellationToken ct)
     {
         var filter = Builders<Core.Entities.Poll>.Filter.And(
             Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId)),
@@ -43,7 +43,7 @@ public class PollPageRepository : IPollPageRepository
         await _collection.UpdateOneAsync(filter, update, cancellationToken: ct);
     }
     
-    public async Task<PollPage?> GetPollPage(string pollPageId, string pollId, CancellationToken ct)
+    public async Task<PollPage?> GetPollPage(string pollId, string pollPageId, CancellationToken ct)
     {
         var filter = Builders<Core.Entities.Poll>.Filter.And(
             Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId)),
@@ -57,7 +57,7 @@ public class PollPageRepository : IPollPageRepository
         return await _collection.Find(filter).Project(projection).FirstOrDefaultAsync(cancellationToken: ct);
     }
 
-    public async Task DeleteQuestion(string pollPageId, string pollId, string questionId, CancellationToken ct)
+    public async Task DeleteQuestion(string pollId, string pollPageId, string questionId, CancellationToken ct)
     {
         var filter = Builders<Core.Entities.Poll>.Filter.And(
             Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId)),
@@ -72,41 +72,63 @@ public class PollPageRepository : IPollPageRepository
         await _collection.UpdateOneAsync(filter, delete, cancellationToken: ct);
     }
 
-    public async Task EditQuestionText(string pollPageId, string pollId, string questionId, string newHeader, CancellationToken ct)
+    public async Task UpdateQuestion(string pollId, string pollPageId, string questionId, Question entity, 
+        CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(pollId) || string.IsNullOrEmpty(pollPageId) || string.IsNullOrEmpty(questionId))
-            throw new ArgumentException("Идентификаторы не могут быть пустыми");
+        if (!ObjectId.TryParse(pollId, out var pollObjectId) || 
+            !ObjectId.TryParse(pollPageId, out var pageObjectId) || 
+            !ObjectId.TryParse(questionId, out var questionObjectId))
+        {
+            throw new ArgumentException("Некорректный формат идентификатора");
+        }
 
         var filter = Builders<Core.Entities.Poll>.Filter.And(
-            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId)),
+            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollObjectId),
             Builders<Core.Entities.Poll>.Filter.ElemMatch(
                 x => x.Pages,
-                page => page.PageId == ObjectId.Parse(pollPageId) &&
-                        page.Questions.Any(question => question.QuestionId == ObjectId.Parse(questionId))
+                page => page.PageId == pageObjectId && 
+                        page.Questions.Any(q => q.QuestionId == questionObjectId)
             )
         );
 
-        var arrayFilters = new List<ArrayFilterDefinition<Core.Entities.Poll>>
+        var updateBuilder = Builders<Core.Entities.Poll>.Update;
+        var updateDefinitions = new List<UpdateDefinition<Core.Entities.Poll>>();
+
+        var bsonEntity = entity.ToBsonDocument();
+        foreach (var field in bsonEntity)
         {
-            new BsonDocumentArrayFilterDefinition<Core.Entities.Poll>(new BsonDocument("i._id",
-                ObjectId.Parse(pollPageId))),
-            new BsonDocumentArrayFilterDefinition<Core.Entities.Poll>(new BsonDocument("j._id",
-                ObjectId.Parse(questionId)))
+            if (field.Value.IsBsonNull) continue;
+
+            updateDefinitions.Add(
+                updateBuilder.Set($"Pages.$[page].Questions.$[question].{field.Name}", field.Value)
+            );
+        }
+
+        if (updateDefinitions.Count == 0)
+        {
+            throw new InvalidOperationException("Нет полей для обновления");
+        }
+
+        var combinedUpdate = updateBuilder.Combine(updateDefinitions);
+        var arrayFilters = new List<ArrayFilterDefinition>
+        {
+            new BsonDocumentArrayFilterDefinition<Core.Entities.Poll>(new BsonDocument("page._id", pageObjectId)),
+            new BsonDocumentArrayFilterDefinition<Core.Entities.Poll>(new BsonDocument("question._id", questionObjectId))
         };
-
-        const string updateString = "Pages.$[i].Questions.$[j].QuestionText";
-        var update = Builders<Core.Entities.Poll>.Update.Set(updateString, newHeader);
-
-        var result = await _collection.UpdateOneAsync(filter, update,
-            options: new UpdateOptions { ArrayFilters = arrayFilters }, cancellationToken: ct);
-
-        if (result.ModifiedCount == 0)
+        var options = new UpdateOptions { ArrayFilters = arrayFilters };
+        var result = await _collection.UpdateOneAsync(
+            filter, 
+            combinedUpdate, 
+            options, 
+            ct
+        );
+        if (result.MatchedCount == 0)
         {
-            throw new InvalidOperationException("Текст вопроса не был обновлен.");
+            throw new InvalidOperationException("Документ не найден");
         }
     }
 
-    public async Task<string> AddQuestion(string pollPageId, string pollId, Question question, CancellationToken ct)
+    public async Task<string> AddQuestion(string pollId, string pollPageId, Question question, CancellationToken ct)
     {
         question.QuestionId = ObjectId.GenerateNewId();
         const string updateString = "Pages.$[i].Questions";

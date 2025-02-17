@@ -1,43 +1,45 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Poll.Api.Extensions;
 using Poll.Api.Filters;
 using Poll.Api.Models.Dto.PollPage;
 using Poll.Api.Models.Dto.Question;
 using Poll.Core.Entities;
 using Poll.Core.Entities.Ldap;
-using Poll.Core.Services.Poll;
-using Poll.Core.Services.PollPage;
+using Poll.Core.Interfaces;
 
 namespace Poll.Api.Controllers;
 
-public record PollArgs(string PollPageId, string PollId);
-
-public record QuestionArgs(string PollId, string QuestionId);
-
+/// <summary>
+/// Контроллер страницы опросов.
+/// </summary>
 [AuthorizedOnly(UserRoles = [UserRole.Poller, UserRole.Admin])]
+[Route("Poll/{pollId}/[controller]/")]
 public class PollPageController : BaseController
 {
-    private readonly IPollPageService _service;
-    private readonly IPollService _pollService;
+    private readonly IPollPageRepository _repository;
+    private readonly IPollRepository _pollRepository;
     private readonly IMapper _mapper;
 
-    public PollPageController(IPollPageService service, IPollService pollService, IMapper mapper)
+    public PollPageController(IPollPageRepository repository, IPollRepository pollRepository, IMapper mapper)
     {
-        _service = service;
-        _pollService = pollService;
+        _repository = repository;
+        _pollRepository = pollRepository;
         _mapper = mapper;
     }
 
     /// <summary>
     /// Получить страницу опроса.
     /// </summary>
-    /// <param name="args">Координаты опроса.</param>
+    /// <param name="pollPageId">Идентификатор страницы опроса.</param>
+    /// <param name="pollId">Идентификатор опроса.</param>
     /// <returns>Объект передачи данных страницы опроса.</returns>
-    [HttpGet]
+    [HttpGet("{pollPageId}")]
     [ProducesResponseType<GetPollPageDto>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> Get([FromQuery] PollArgs args)
+    public async Task<IActionResult> Get([FromRoute] string pollPageId, [FromRoute] string pollId)
     {
-        var entity = await _service.GetPollPage(args.PollPageId, args.PollId, Ct);
+        await this.ValidateAccess(pollId, _pollRepository, Ct);
+        var entity = await _repository.GetPollPage(pollId, pollPageId, Ct);
         if (entity is null)
         {
             return BadRequest("Страница опроса не найдена");
@@ -50,45 +52,47 @@ public class PollPageController : BaseController
     /// <summary>
     /// Добавить страницу опроса.
     /// </summary>
+    /// <param name="pollId">Идентификатор опроса.</param>
     /// <param name="dto">Объект передачи данных добавления страницы опроса.</param>
     /// <returns>Идентификатор новой страницы опроса.</returns>
     [HttpPut]
     [ProducesResponseType<string>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> Add(AddPollPageDto dto)
+    public async Task<IActionResult> Add([FromRoute] string pollId, [FromBody] AddPollPageDto dto)
     {
+        await this.ValidateAccess(pollId, _pollRepository, Ct);
         var entity = _mapper.Map<PollPage>(dto);
-        var poll = await _pollService.Get(dto.PollId, Ct);
-        if (poll?.OwnerId != CurrentUser.Id)
-        {
-            return BadRequest("Вы не являетесь создателем опроса.");
-        }
-
-        var result = await _service.AddPollPage(entity, dto.PollId, Ct);
+        var result = await _repository.AddPollPage(pollId, entity, Ct);
         return Ok(result);
     }
 
     /// <summary>
     /// Удалить страницу опроса.
     /// </summary>
-    /// <param name="args">Координаты страницы.</param>
-    [HttpDelete]
+    /// <param name="pollPageId">Идентификатор страницы опроса.</param>
+    /// <param name="pollId">Идентификатор опроса.</param>
+    [HttpDelete("{pollPageId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete([FromQuery] PollArgs args)
+    public async Task<IActionResult> Delete([FromRoute] string pollPageId, [FromRoute] string pollId)
     {
-        await _service.RemovePollPage(args.PollPageId, args.PollId, Ct);
+        await this.ValidateAccess(pollId, _pollRepository, Ct);
+        await _repository.RemovePollPage(pollId, pollPageId, Ct);
         return NoContent();
     }
 
     /// <summary>
     /// Обновить заголовок страницы опроса.
     /// </summary>
-    /// <param name="args">Координаты страницы.</param>
     /// <param name="header">Новый заголовок.</param>
-    [HttpPatch]
+    /// <param name="pollId">Идентификатор опроса.</param>
+    /// <param name="pollPageId">Идентификатор страницы опроса.</param>
+    [HttpPatch("{pollPageId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> UpdateHeader([FromQuery] PollArgs args, [FromBody] string header)
+    public async Task<IActionResult> UpdateHeader([FromBody] string header, [FromRoute] string pollId,
+        [FromRoute] string pollPageId)
     {
-        await _service.UpdateHeader(args.PollPageId, args.PollId, header, Ct);
+        await this.ValidateAccess(pollId, _pollRepository, Ct);
+
+        await _repository.UpdateHeader(pollId, pollPageId, header, Ct);
         return NoContent();
     }
 
@@ -101,24 +105,30 @@ public class PollPageController : BaseController
     /// <returns></returns>
     [HttpPost("{pollPageId}/question")]
     [ProducesResponseType<string>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> CreateQuestion([FromRoute] string pollPageId, [FromQuery] string pollId,
+    public async Task<IActionResult> CreateQuestion([FromRoute] string pollPageId, [FromRoute] string pollId,
         [FromBody] QuestionDto dto)
     {
+        await this.ValidateAccess(pollId, _pollRepository, Ct);
+
         var question = _mapper.Map<Question>(dto);
-        return Ok(await _service.AddQuestion(pollPageId, pollId, question, Ct));
+        return Ok(await _repository.AddQuestion(pollId, pollPageId, question, Ct));
     }
 
     /// <summary>
     /// Удалить вопрос.
     /// </summary>
-    /// <param name="args">Координаты вопроса.</param>
+    /// <param name="pollId">Идентификатор опроса.</param>
     /// <param name="pollPageId">Идентификатор страницы.</param>
+    /// <param name="questionId">Идентификатор вопроса.</param>
     /// <returns></returns>
-    [HttpDelete("{pollPageId}/question")]
+    [HttpDelete("{pollPageId}/question/{questionId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> DeleteQuestion([FromQuery] QuestionArgs args, [FromRoute] string pollPageId)
+    public async Task<IActionResult> DeleteQuestion([FromRoute] string pollId, [FromRoute] string pollPageId, 
+        [FromRoute] string questionId)
     {
-        await _service.DeleteQuestion(pollPageId, args.PollId, args.QuestionId, Ct);
+        await this.ValidateAccess(pollId, _pollRepository, Ct);
+
+        await _repository.DeleteQuestion(pollId, pollPageId, questionId, Ct);
         return NoContent();
     }
 
@@ -129,12 +139,15 @@ public class PollPageController : BaseController
     /// <param name="args"></param>
     /// <param name="pollPageId"></param>
     /// <param name="text"></param>
-    [HttpPatch("{pollPageId}/question")]
+    [HttpPut("{pollPageId}/question/{questionId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> EditQuestionText([FromQuery] QuestionArgs args, 
-        [FromRoute] string pollPageId, [FromBody] string text)
+    public async Task<IActionResult> EditQuestionText([FromRoute] string pollId, [FromRoute] string questionId, 
+        [FromRoute] string pollPageId, [FromBody] QuestionDto dto)
     {
-        await _service.EditQuestionText(pollPageId, args.PollId, args.QuestionId, text, Ct);
+        await this.ValidateAccess(pollId, _pollRepository, Ct);
+
+        var entity = _mapper.Map<Question>(dto);
+        await _repository.UpdateQuestion(pollId, pollPageId, questionId, entity, Ct);
         return NoContent();
     }
 }

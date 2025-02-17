@@ -63,4 +63,11 @@ public class Poll
     /// Список идентификаторов сотрудников, прошедших опрос.
     /// </summary>
     public List<string> PassedEmployees { get; init; } = [];
+
+    /// <summary>
+    /// Ответы на вопросы.
+    /// Ключ - идентификатор вопроса.
+    /// Значение - словарь, где ключ - идентификатор сотрудника, значение - ответ, который дал сотрудник.
+    /// </summary>
+    public Dictionary<ObjectId, Dictionary<string, string>> Answers { get; set; }
 }

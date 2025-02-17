@@ -6,7 +6,7 @@ namespace Poll.Core.Entities.Answers;
 /// Модель ответа на вопрос.
 /// </summary>
 [BsonNoId]
-public abstract class QuestionAnswer
+public class QuestionAnswer
 {
     /// <summary>
     /// Идентификатор сотрудника, давшего ответ.
@@ -14,7 +14,8 @@ public abstract class QuestionAnswer
     public string EmployeeId { get; init; }
 
     /// <summary>
-    /// Имя сотрудника, давшего ответ.
+    /// Значение ответа
     /// </summary>
-    public string EmployeeName { get; init; }
+    /// <returns></returns>
+    public string Value { get; set; }
 }

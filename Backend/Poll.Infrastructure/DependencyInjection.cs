@@ -27,8 +27,9 @@ public static class DependencyInjection
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
         return services
-            .AddTransient(typeof(IRepository<Core.Entities.Poll>), typeof(PollRepository))
-            .AddTransient<IPollPageRepository, PollPageRepository>();
+            .AddTransient<IPollRepository, PollRepository>()
+            .AddTransient<IPollPageRepository, PollPageRepository>()
+            .AddTransient<IRuleRepository, RuleRepository>();
     }
 
     private static IServiceCollection AddLdap(this IServiceCollection services)

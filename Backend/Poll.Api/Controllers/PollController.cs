@@ -1,24 +1,26 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Poll.Api.Extensions;
 using Poll.Api.Filters;
-using Poll.Api.Models.Dto;
 using Poll.Api.Models.Dto.Poll;
+using Poll.Core.Entities.Answers;
 using Poll.Core.Entities.Ldap;
 using Poll.Core.Interfaces;
-using Poll.Core.Services.Authorization;
-using Poll.Core.Services.Poll;
 
 namespace Poll.Api.Controllers;
 
+/// <summary>
+/// Контроллер сущности опрос.
+/// </summary>
 public class PollController : BaseController
 {
-    private readonly IPollService _service;
+    private readonly IPollRepository _repository;
     private readonly IMapper _mapper;
     private readonly ILdapService _ldapService;
 
-    public PollController(IPollService service, IMapper mapper, ILdapService ldapService)
+    public PollController(IPollRepository repository, IMapper mapper, ILdapService ldapService)
     {
-        _service = service;
+        _repository = repository;
         _mapper = mapper;
         _ldapService = ldapService;
     }
@@ -35,7 +37,7 @@ public class PollController : BaseController
     {
         dto.OwnerId = CurrentUser.Id;
         var entity = _mapper.Map<Core.Entities.Poll>(dto);
-        return Ok(await _service.AddPoll(entity, Ct));
+        return Ok(await _repository.Add(entity, Ct));
     }
 
     /// <summary>
@@ -47,18 +49,9 @@ public class PollController : BaseController
     [AuthorizedOnly(UserRoles = [UserRole.Poller, UserRole.Admin])]
     public async Task<IActionResult> Delete(string pollId)
     {
-        var entity = await _service.Get(pollId, Ct);
-        if (entity is null)
-        {
-            return BadRequest("Опрос не найден");
-        }
+        await this.ValidateAccess(pollId, _repository, Ct);
 
-        if (entity.OwnerId != CurrentUser.Id)
-        {
-            return BadRequest("Вы не являетесь автором опроса.");
-        }
-
-        await _service.Delete(pollId, Ct);
+        await _repository.Delete(pollId, Ct);
         return NoContent();
     }
 
@@ -72,7 +65,7 @@ public class PollController : BaseController
     [AuthorizedOnly(UserRoles = [])]
     public async Task<IActionResult> Get(string pollId) 
     {
-        var entity = await _service.Get(pollId, Ct);
+        var entity = await _repository.GetById(pollId, Ct);
         if (entity is null)
         {
             return BadRequest("Опрос не найден");
@@ -85,13 +78,20 @@ public class PollController : BaseController
         }
 
         if (entity.DepartmentIds.Count != 0 && !entity.DepartmentIds.Contains(user.Department) ||
-            entity.EmployeeIds.Count != 0 && !entity.EmployeeIds.Contains(user.Department))
+            entity.EmployeeIds.Count != 0 && !entity.EmployeeIds.Contains(user.ObjectGuid))
         {
             return BadRequest("Вам недоступен этот опрос");
         }
 
         var dto = _mapper.Map<GetPollDto>(entity);
         return Ok(dto);
+    }
+
+    [HttpPost("{pollId}")]
+    public async Task<IActionResult> CompletePoll(CompletePollDto dto, string pollId)
+    {
+        await _repository.Complete(pollId, CurrentUser.Id, dto, Ct);
+        return NoContent();
     }
 
     /// <summary>
@@ -104,7 +104,7 @@ public class PollController : BaseController
     [AuthorizedOnly(UserRoles = [UserRole.Poller, UserRole.Admin])]
     public async Task<IActionResult> GetResult(string pollId)
     {
-        var entity = await _service.Get(pollId, Ct);
+        var entity = await _repository.GetById(pollId, Ct);
         if (entity?.OwnerId == CurrentUser.Id)
         {
             return Ok(_mapper.Map<ResultDto>(entity));
@@ -123,7 +123,7 @@ public class PollController : BaseController
     public async Task<IActionResult> GetAll()
     {
         var userId = CurrentUser.Id; 
-        var polls = await _service.GetAll(userId, Ct);
+        var polls = await _repository.GetAll(userId, Ct);
         var pollsDto = _mapper.ProjectTo<GetAllPollsDto>(polls.AsQueryable()).ToList();
         return Ok(pollsDto);
     }
@@ -137,19 +137,10 @@ public class PollController : BaseController
     [AuthorizedOnly(UserRoles = [UserRole.Poller, UserRole.Admin])]
     public async Task<IActionResult> Update(UpdatePollDto dto)
     {
-        var storedEntity = await _service.Get(dto.PollId, Ct);
-        if (storedEntity is null)
-        {
-            return BadRequest("Опрос не найден");
-        }
-
-        if (storedEntity.OwnerId != CurrentUser.Id)
-        {
-            return BadRequest("Вы не являетесь автором опроса.");
-        }
+        await this.ValidateAccess(dto.PollId, _repository, Ct);
 
         var entity = _mapper.Map<Core.Entities.Poll>(dto);
-        await _service.Update(entity, Ct);
+        await _repository.Update(entity, Ct);
         return NoContent();
     }
 }
