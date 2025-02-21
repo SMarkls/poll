@@ -7,11 +7,11 @@ namespace Poll.Api.Newtonsoft;
 public class VariantsJsonConverter : JsonConverter
 {
     private readonly HashSet<Type> _knownTypes = [typeof(LinearVariants), typeof(MatrixVariants)];
-    private static readonly JsonSerializer _defaultSerializer = new();
+    private static readonly JsonSerializer DefaultSerializer = new();
 
     public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
     {
-        JObject jObject = JObject.FromObject(value, _defaultSerializer);
+        JObject jObject = JObject.FromObject(value, DefaultSerializer);
         jObject.WriteTo(writer);
     }
 

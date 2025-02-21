@@ -14,4 +14,6 @@ public interface IPollRepository
     Task Delete(string id, CancellationToken ct);
     Task<string> GetOwnerId(string pollId, CancellationToken ct);
     Task Complete(string pollId, string userId, CompletePollDto dto, CancellationToken ct);
+    Task PersistProgress(string pollId, string userId, CompletePollDto dto, CancellationToken ct);
+    Task<CompletePollDto?> GetProgress(string pollId, string userId, CancellationToken ct);
 }

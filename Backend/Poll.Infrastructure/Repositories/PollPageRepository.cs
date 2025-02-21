@@ -17,28 +17,28 @@ public class PollPageRepository : IPollPageRepository
 
     public async Task<string> AddPollPage(string pollId, PollPage pollPage, CancellationToken ct)
     {
-        pollPage.PageId = ObjectId.GenerateNewId();
-        pollPage.Questions.ForEach(x => x.QuestionId = ObjectId.GenerateNewId());
-        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId));
+        pollPage.PageId = ObjectId.GenerateNewId().ToString();
+        pollPage.Questions.ForEach(x => x.QuestionId = ObjectId.GenerateNewId().ToString());
+        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId);
         var update = Builders<Core.Entities.Poll>.Update.Push(x => x.Pages, pollPage);
         await _collection.UpdateOneAsync(filter, update, cancellationToken: ct);
-        return pollPage.PageId.ToString();
+        return pollPage.PageId;
     }
 
     public async Task RemovePollPage(string pollId, string pollPageId, CancellationToken ct)
     {
-        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId));
+        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId);
         var delete =
             Builders<Core.Entities.Poll>.Update.PullFilter(x => x.Pages,
-                Builders<PollPage>.Filter.Eq(x => x.PageId, ObjectId.Parse(pollPageId)));
-        await _collection.UpdateOneAsync(filter, delete);
+                Builders<PollPage>.Filter.Eq(x => x.PageId, pollPageId));
+        await _collection.UpdateOneAsync(filter, delete, cancellationToken: ct);
     }
 
     public async Task UpdateHeader(string pollId, string pollPageId, string newHeader, CancellationToken ct)
     {
         var filter = Builders<Core.Entities.Poll>.Filter.And(
-            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId)),
-            Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages, p => p.PageId == ObjectId.Parse(pollPageId)));
+            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId),
+            Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages, p => p.PageId == pollPageId));
         var update = Builders<Core.Entities.Poll>.Update.Set(x => x.Pages.FirstMatchingElement().PageHeader, newHeader);
         await _collection.UpdateOneAsync(filter, update, cancellationToken: ct);
     }
@@ -46,12 +46,12 @@ public class PollPageRepository : IPollPageRepository
     public async Task<PollPage?> GetPollPage(string pollId, string pollPageId, CancellationToken ct)
     {
         var filter = Builders<Core.Entities.Poll>.Filter.And(
-            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId)),
-            Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages, p => p.PageId == ObjectId.Parse(pollPageId))
+            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId),
+            Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages, p => p.PageId == pollPageId)
         );
     
         var projection = Builders<Core.Entities.Poll>.Projection.Expression(p =>
-            p.Pages.FirstOrDefault(page => page.PageId == ObjectId.Parse(pollPageId))
+            p.Pages.FirstOrDefault(page => page.PageId == pollPageId)
         );
     
         return await _collection.Find(filter).Project(projection).FirstOrDefaultAsync(cancellationToken: ct);
@@ -60,14 +60,14 @@ public class PollPageRepository : IPollPageRepository
     public async Task DeleteQuestion(string pollId, string pollPageId, string questionId, CancellationToken ct)
     {
         var filter = Builders<Core.Entities.Poll>.Filter.And(
-            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId)),
+            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId),
             Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages,
-                p => p.PageId == ObjectId.Parse(pollPageId) &&
-                     p.Questions.Any(x => x.QuestionId == ObjectId.Parse(questionId))));
+                p => p.PageId == pollPageId &&
+                     p.Questions.Any(x => x.QuestionId == questionId)));
 
         var delete = Builders<Core.Entities.Poll>.Update.PullFilter(
             x => x.Pages.FirstMatchingElement().Questions,
-            q => q.QuestionId == ObjectId.Parse(questionId));
+            q => q.QuestionId == questionId);
 
         await _collection.UpdateOneAsync(filter, delete, cancellationToken: ct);
     }
@@ -75,19 +75,13 @@ public class PollPageRepository : IPollPageRepository
     public async Task UpdateQuestion(string pollId, string pollPageId, string questionId, Question entity, 
         CancellationToken ct)
     {
-        if (!ObjectId.TryParse(pollId, out var pollObjectId) || 
-            !ObjectId.TryParse(pollPageId, out var pageObjectId) || 
-            !ObjectId.TryParse(questionId, out var questionObjectId))
-        {
-            throw new ArgumentException("Некорректный формат идентификатора");
-        }
-
+        
         var filter = Builders<Core.Entities.Poll>.Filter.And(
-            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollObjectId),
+            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId),
             Builders<Core.Entities.Poll>.Filter.ElemMatch(
                 x => x.Pages,
-                page => page.PageId == pageObjectId && 
-                        page.Questions.Any(q => q.QuestionId == questionObjectId)
+                page => page.PageId == pollPageId && 
+                        page.Questions.Any(q => q.QuestionId == questionId)
             )
         );
 
@@ -112,8 +106,8 @@ public class PollPageRepository : IPollPageRepository
         var combinedUpdate = updateBuilder.Combine(updateDefinitions);
         var arrayFilters = new List<ArrayFilterDefinition>
         {
-            new BsonDocumentArrayFilterDefinition<Core.Entities.Poll>(new BsonDocument("page._id", pageObjectId)),
-            new BsonDocumentArrayFilterDefinition<Core.Entities.Poll>(new BsonDocument("question._id", questionObjectId))
+            new BsonDocumentArrayFilterDefinition<Core.Entities.Poll>(new BsonDocument("page._id", pollPageId)),
+            new BsonDocumentArrayFilterDefinition<Core.Entities.Poll>(new BsonDocument("question._id", questionId))
         };
         var options = new UpdateOptions { ArrayFilters = arrayFilters };
         var result = await _collection.UpdateOneAsync(
@@ -130,7 +124,7 @@ public class PollPageRepository : IPollPageRepository
 
     public async Task<string> AddQuestion(string pollId, string pollPageId, Question question, CancellationToken ct)
     {
-        question.QuestionId = ObjectId.GenerateNewId();
+        question.QuestionId = ObjectId.GenerateNewId().ToString();
         const string updateString = "Pages.$[i].Questions";
         var update = Builders<Core.Entities.Poll>.Update.Push(updateString, question);
         var arrayFilters = new List<ArrayFilterDefinition<Core.Entities.Poll>>
@@ -139,7 +133,7 @@ public class PollPageRepository : IPollPageRepository
                 ObjectId.Parse(pollPageId))),
         };
 
-        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId));
+        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId);
         var result =
             await _collection.UpdateOneAsync(filter, update, new UpdateOptions { ArrayFilters = arrayFilters }, ct);
 
@@ -148,6 +142,6 @@ public class PollPageRepository : IPollPageRepository
             throw new InvalidOperationException("Вопрос не был добавлен");
         }
 
-        return question.QuestionId.ToString();
+        return question.QuestionId;
     }
 }

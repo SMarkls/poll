@@ -12,7 +12,8 @@ public class Poll
     /// Идентификатор опроса.
     /// </summary>
     [BsonId]
-    public ObjectId PollId { get; init; }
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string PollId { get; init; }
 
     /// <summary>
     /// Название опроса.

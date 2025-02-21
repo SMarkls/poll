@@ -53,7 +53,7 @@ public class AuthorizationController : BaseController
     [HttpPost]
     [ProducesResponseType<LoginResult>(StatusCodes.Status200OK)]
     [CookieRequired("RefreshToken", "Токен обновления")]
-    [AuthorizedOnly(UserRoles = [])]
+    [AuthorizedOnly]
     public IActionResult RefreshToken()
     {
         var refreshToken = HttpContext.Request.Cookies["RefreshToken"];

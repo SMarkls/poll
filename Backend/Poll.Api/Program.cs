@@ -1,4 +1,10 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Mvc;
+using NLog.Config;
 using NLog.Extensions.Logging;
+using Poll.Api.Extensions;
+using Poll.Api.Filters;
 using Poll.Api.Mappings;
 using Poll.Api.Middleware;
 using Poll.Api.Newtonsoft;
@@ -9,23 +15,38 @@ using Poll.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
-builder.Services.AddControllers()
+builder.Services
+    .AddControllers(opts =>
+    {
+        opts.Filters.Add<ValidationFilter>();
+        opts.Filters.Add<AuthorizedOnlyAttribute>();
+    })
     .ConfigureSerialization();
 
+builder.Services
+    .AddFluentValidationAutoValidation()
+    .AddValidatorsFromAssemblyContaining<Program>()
+    .RegisterConfiguration();
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services
+    .AddSwagger()
+    .AddSwaggerGen();
+
 builder.Services.AddLogging(options =>
 {
     options.ClearProviders();
     options.SetMinimumLevel(LogLevel.Trace);
     options.AddNLog();
+    options.Configure(opts => opts.ActivityTrackingOptions = ActivityTrackingOptions.TraceId);
 });
 
 builder.Services
-    .AddSwagger()
     .AddMappings()
     .AddCore(configuration)
     .AddInfrastructure(configuration);
+
+builder.Services.Configure<ApiBehaviorOptions>(opts => opts.SuppressModelStateInvalidFilter = true);
 
 var app = builder.Build();
 app.UseCors(policy =>

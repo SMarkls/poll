@@ -25,8 +25,8 @@ public class RuleRepository : IRuleRepository
 
         var filters = Builders<Core.Entities.Poll>.Filter;
         var filter = filters.And(
-            filters.Eq(x => x.PollId, ObjectId.Parse(pollId)),
-            filters.ElemMatch(x => x.Pages, x => x.PageId == ObjectId.Parse(pollPageId)));
+            filters.Eq(x => x.PollId, pollId),
+            filters.ElemMatch(x => x.Pages, x => x.PageId == pollPageId));
 
         var update = Builders<Core.Entities.Poll>.Update.Set("Pages.$[i].Questions.$[j].ViewRule", rule);
         var arrayFilters = new List<ArrayFilterDefinition<Core.Entities.Poll>>
@@ -47,8 +47,8 @@ public class RuleRepository : IRuleRepository
     {     
         var filters = Builders<Core.Entities.Poll>.Filter;
         var filter = filters.And(
-            filters.Eq(x => x.PollId, ObjectId.Parse(pollId)),
-            filters.ElemMatch(x => x.Pages, x => x.PageId == ObjectId.Parse(pollPageId)));
+            filters.Eq(x => x.PollId, pollId),
+            filters.ElemMatch(x => x.Pages, x => x.PageId == pollPageId));
 
         var update = Builders<Core.Entities.Poll>.Update.Unset("Pages.$[i].Questions.$[j].ViewRule");
         var arrayFilters = new List<ArrayFilterDefinition<Core.Entities.Poll>>

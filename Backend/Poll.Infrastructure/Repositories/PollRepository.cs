@@ -21,7 +21,7 @@ public class PollRepository : IPollRepository
     
     public async Task<Core.Entities.Poll?> GetById(string id, CancellationToken ct)
     {
-        return await _collection.FindAsync(x => x.PollId == ObjectId.Parse(id), cancellationToken: ct)
+        return await _collection.FindAsync(x => x.PollId == id, cancellationToken: ct)
             .ContinueWith(task => task.Result.FirstOrDefaultAsync(cancellationToken: ct), ct)
             .Unwrap();
     }
@@ -46,7 +46,7 @@ public class PollRepository : IPollRepository
         }
 
         await _collection.InsertOneAsync(entity, cancellationToken: ct);
-        return entity.PollId.ToString();
+        return entity.PollId;
     }
 
     public async Task<List<string>> AddAll(List<Core.Entities.Poll> entities, CancellationToken ct)
@@ -62,7 +62,7 @@ public class PollRepository : IPollRepository
 
     public async Task<Core.Entities.Poll> Update(Core.Entities.Poll entity, CancellationToken ct)
     {
-        var storedEntity = await GetById(entity.PollId.ToString(), ct);
+        var storedEntity = await GetById(entity.PollId, ct);
         if (storedEntity is null)
         {
             throw new Exception("Сущность не найдена в базе данных");
@@ -79,13 +79,13 @@ public class PollRepository : IPollRepository
 
     public async Task Delete(string id, CancellationToken ct)
     {
-        await _collection.DeleteOneAsync(x => x.PollId == ObjectId.Parse(id), cancellationToken: ct);
+        await _collection.DeleteOneAsync(x => x.PollId == id, cancellationToken: ct);
     }
 
     public async Task<string> GetOwnerId(string pollId, CancellationToken ct)
     {
         var projection = Builders<Core.Entities.Poll>.Projection.Include(x => x.OwnerId);
-        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, ObjectId.Parse(pollId));
+        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId);
         var result = await _collection.Find(filter)
             .Project(projection)
             .FirstOrDefaultAsync(cancellationToken: ct);
@@ -98,9 +98,8 @@ public class PollRepository : IPollRepository
         return string.Empty;
     }
 
-    public async Task Complete(string pollIdValue, string userId, CompletePollDto dto, CancellationToken ct)
+    public async Task Complete(string pollId, string userId, CompletePollDto dto, CancellationToken ct)
     {
-        var pollId = ObjectId.Parse(pollIdValue);
         var updates = new List<WriteModel<Core.Entities.Poll>>();
     
         // 1. Добавить пользователя в PassedEmployees (без дубликатов)
@@ -133,4 +132,10 @@ public class PollRepository : IPollRepository
         // 3. Выполнить все обновления одной операцией
         await _collection.BulkWriteAsync(updates, cancellationToken: ct);
     }
+
+    public Task PersistProgress(string pollId, string userId, CompletePollDto dto, CancellationToken ct) =>
+        Task.CompletedTask;
+
+    public Task<CompletePollDto?> GetProgress(string pollId, string userId, CancellationToken ct) =>
+        Task.FromResult<CompletePollDto?>(null);
 }

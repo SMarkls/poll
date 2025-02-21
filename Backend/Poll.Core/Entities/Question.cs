@@ -16,7 +16,8 @@ public class Question
     /// Идентификатор вопроса.
     /// </summary>
     [BsonId]
-    public ObjectId QuestionId { get; set; }
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string QuestionId { get; set; }
 
     /// <summary>
     /// Текст вопроса.

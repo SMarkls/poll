@@ -62,7 +62,7 @@ public class PollController : BaseController
     /// <returns>Объект передачи данных получения опроса.</returns>
     [HttpGet("{pollId}")]
     [ProducesResponseType<GetPollDto>(StatusCodes.Status200OK)]
-    [AuthorizedOnly(UserRoles = [])]
+    [AuthorizedOnly]
     public async Task<IActionResult> Get(string pollId) 
     {
         var entity = await _repository.GetById(pollId, Ct);
@@ -87,6 +87,12 @@ public class PollController : BaseController
         return Ok(dto);
     }
 
+    /// <summary>
+    /// Пройти опрос.
+    /// </summary>
+    /// <param name="dto">Объект передачи данных прохождения опроса.</param>
+    /// <param name="pollId">Идентификатор опроса.</param>
+    /// <returns></returns>
     [HttpPost("{pollId}")]
     public async Task<IActionResult> CompletePoll(CompletePollDto dto, string pollId)
     {
@@ -99,7 +105,7 @@ public class PollController : BaseController
     /// </summary>
     /// <param name="pollId">Идентификатор опроса.</param>
     /// <returns>Объект передачи данных результата опроса.</returns>
-    [HttpGet("result/{pollId}")]
+    [HttpGet("{pollId}/result")]
     [ProducesResponseType<ResultDto>(StatusCodes.Status200OK)]
     [AuthorizedOnly(UserRoles = [UserRole.Poller, UserRole.Admin])]
     public async Task<IActionResult> GetResult(string pollId)
@@ -111,6 +117,29 @@ public class PollController : BaseController
         }
 
         return BadRequest("Вы не являетесь создателем опроса");
+    }
+    
+    /// <summary>
+    /// Сохранить прогресс прохождения опроса.
+    /// </summary>
+    /// <param name="pollId">Идентификатор опроса.</param>
+    /// <param name="dto">Объект передачи данных прохождения опроса.</param>
+    [HttpPost("{pollId}/progress")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [AuthorizedOnly]
+    public async Task<IActionResult> PersistProgress([FromRoute] string pollId, CompletePollDto dto)
+    {
+        await _repository.PersistProgress(pollId, CurrentUser.Id, dto, Ct);
+        return NoContent();
+    }
+
+    [HttpGet("{pollId}/progress")]
+    [ProducesResponseType<CompletePollDto>(StatusCodes.Status200OK)]
+    [AuthorizedOnly]
+    public async Task<IActionResult> GetProgress([FromRoute] string pollId)
+    {
+        var result = await _repository.GetProgress(pollId, CurrentUser.Id, Ct);
+        return Ok(result);
     }
 
     /// <summary>

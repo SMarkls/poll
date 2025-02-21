@@ -12,7 +12,8 @@ public class PollPage
     /// Идентификатор страницы
     /// </summary>
     [BsonId]
-    public ObjectId PageId { get; set; }
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string PageId { get; set; }
 
     /// <summary>
     /// Заголовок страницы.

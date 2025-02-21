@@ -11,7 +11,7 @@ namespace Poll.Api.Filters;
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
 public class AuthorizedOnlyAttribute : Attribute, IAuthorizationFilter
 {
-    public required UserRole[] UserRoles { get; init; }
+    public UserRole[] UserRoles { get; init; } = [];
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {
