@@ -1,5 +1,8 @@
-namespace Poll.Api.Models.Dto;
+namespace Poll.Api.Models.Dto.Poll;
 
+/// <summary>
+/// Объект передачи данных добавления опроса.
+/// </summary>
 public class AddPollDto
 {
     /// <summary>

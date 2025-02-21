@@ -3,6 +3,9 @@ using Poll.Core.Entities.Variants;
 
 namespace Poll.Api.Models.Dto.Question;
 
+/// <summary>
+/// Объект передачи данных создания вопроса.
+/// </summary>
 public class QuestionDto
 {
     /// <summary>
@@ -18,5 +21,5 @@ public class QuestionDto
     /// <summary>
     /// Варианты ответа.
     /// </summary>
-    public List<IBaseVariants> Variants { get; init; }
+    public BaseVariants Variants { get; init; }
 }

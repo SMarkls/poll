@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 using Poll.Core.Entities;
 using Poll.Core.Interfaces;
 using Poll.Infrastructure.MongoConnection;
@@ -14,50 +15,133 @@ public class PollPageRepository : IPollPageRepository
         _collection = collectionFactory.GetCollection();
     }
 
-    public async Task<string> AddPollPage(PollPage pollPage, string pollId)
+    public async Task<string> AddPollPage(string pollId, PollPage pollPage, CancellationToken ct)
     {
-        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, new ObjectId(pollId));
+        pollPage.PageId = ObjectId.GenerateNewId().ToString();
+        pollPage.Questions.ForEach(x => x.QuestionId = ObjectId.GenerateNewId().ToString());
+        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId);
         var update = Builders<Core.Entities.Poll>.Update.Push(x => x.Pages, pollPage);
-        await _collection.UpdateOneAsync(filter, update);
-        return pollPage.PageId.ToString();
+        await _collection.UpdateOneAsync(filter, update, cancellationToken: ct);
+        return pollPage.PageId;
     }
 
-    public async Task RemovePollPage(string pollPageId, string pollId)
+    public async Task RemovePollPage(string pollId, string pollPageId, CancellationToken ct)
     {
-        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, new ObjectId(pollId));
+        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId);
         var delete =
             Builders<Core.Entities.Poll>.Update.PullFilter(x => x.Pages,
-                Builders<PollPage>.Filter.Eq(x => x.PageId, new ObjectId(pollId)));
-        await _collection.UpdateOneAsync(filter, delete);
+                Builders<PollPage>.Filter.Eq(x => x.PageId, pollPageId));
+        await _collection.UpdateOneAsync(filter, delete, cancellationToken: ct);
     }
 
-    public async Task UpdateHeader(string pollPageId, string pollId, string newHeader)
+    public async Task UpdateHeader(string pollId, string pollPageId, string newHeader, CancellationToken ct)
     {
         var filter = Builders<Core.Entities.Poll>.Filter.And(
-            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, new ObjectId(pollId)),
-            Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages, p => p.PageId == new ObjectId(pollPageId)));
-        var update = Builders<Core.Entities.Poll>.Update.Set("Pages.$.PageHeader", newHeader);
-        await _collection.UpdateOneAsync(filter, update);
+            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId),
+            Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages, p => p.PageId == pollPageId));
+        var update = Builders<Core.Entities.Poll>.Update.Set(x => x.Pages.FirstMatchingElement().PageHeader, newHeader);
+        await _collection.UpdateOneAsync(filter, update, cancellationToken: ct);
+    }
+    
+    public async Task<PollPage?> GetPollPage(string pollId, string pollPageId, CancellationToken ct)
+    {
+        var filter = Builders<Core.Entities.Poll>.Filter.And(
+            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId),
+            Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages, p => p.PageId == pollPageId)
+        );
+    
+        var projection = Builders<Core.Entities.Poll>.Projection.Expression(p =>
+            p.Pages.FirstOrDefault(page => page.PageId == pollPageId)
+        );
+    
+        return await _collection.Find(filter).Project(projection).FirstOrDefaultAsync(cancellationToken: ct);
     }
 
-    public Task<PollPage?> GetPollPage(string pollPageId, string pollId)
+    public async Task DeleteQuestion(string pollId, string pollPageId, string questionId, CancellationToken ct)
     {
         var filter = Builders<Core.Entities.Poll>.Filter.And(
-            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, new ObjectId(pollId)),
-            Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages, p => p.PageId == new ObjectId(pollPageId)));
-        return _collection.FindAsync(filter).ContinueWith(x =>
-            x.Result.FirstOrDefaultAsync()
-                .ContinueWith(x => x.Result.Pages.FirstOrDefault(x => x.PageId == new ObjectId(pollPageId)))).Unwrap();
-    }
-
-    public Task DeleteQuestion(string pollPageId, string pollId, string questionId)
-    {
-        var filter = Builders<Core.Entities.Poll>.Filter.And(
-            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, new ObjectId(pollId)),
-            Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages, p => p.PageId == new ObjectId(pollPageId)));
+            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId),
+            Builders<Core.Entities.Poll>.Filter.ElemMatch(x => x.Pages,
+                p => p.PageId == pollPageId &&
+                     p.Questions.Any(x => x.QuestionId == questionId)));
 
         var delete = Builders<Core.Entities.Poll>.Update.PullFilter(
-            x => x.Pages,
-            Builders<PollPage>.Filter.Eq(x => x.PageId, new ObjectId(pollPageId)));
+            x => x.Pages.FirstMatchingElement().Questions,
+            q => q.QuestionId == questionId);
+
+        await _collection.UpdateOneAsync(filter, delete, cancellationToken: ct);
+    }
+
+    public async Task UpdateQuestion(string pollId, string pollPageId, string questionId, Question entity, 
+        CancellationToken ct)
+    {
+        
+        var filter = Builders<Core.Entities.Poll>.Filter.And(
+            Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId),
+            Builders<Core.Entities.Poll>.Filter.ElemMatch(
+                x => x.Pages,
+                page => page.PageId == pollPageId && 
+                        page.Questions.Any(q => q.QuestionId == questionId)
+            )
+        );
+
+        var updateBuilder = Builders<Core.Entities.Poll>.Update;
+        var updateDefinitions = new List<UpdateDefinition<Core.Entities.Poll>>();
+
+        var bsonEntity = entity.ToBsonDocument();
+        foreach (var field in bsonEntity)
+        {
+            if (field.Value.IsBsonNull) continue;
+
+            updateDefinitions.Add(
+                updateBuilder.Set($"Pages.$[page].Questions.$[question].{field.Name}", field.Value)
+            );
+        }
+
+        if (updateDefinitions.Count == 0)
+        {
+            throw new InvalidOperationException("Нет полей для обновления");
+        }
+
+        var combinedUpdate = updateBuilder.Combine(updateDefinitions);
+        var arrayFilters = new List<ArrayFilterDefinition>
+        {
+            new BsonDocumentArrayFilterDefinition<Core.Entities.Poll>(new BsonDocument("page._id", pollPageId)),
+            new BsonDocumentArrayFilterDefinition<Core.Entities.Poll>(new BsonDocument("question._id", questionId))
+        };
+        var options = new UpdateOptions { ArrayFilters = arrayFilters };
+        var result = await _collection.UpdateOneAsync(
+            filter, 
+            combinedUpdate, 
+            options, 
+            ct
+        );
+        if (result.MatchedCount == 0)
+        {
+            throw new InvalidOperationException("Документ не найден");
+        }
+    }
+
+    public async Task<string> AddQuestion(string pollId, string pollPageId, Question question, CancellationToken ct)
+    {
+        question.QuestionId = ObjectId.GenerateNewId().ToString();
+        const string updateString = "Pages.$[i].Questions";
+        var update = Builders<Core.Entities.Poll>.Update.Push(updateString, question);
+        var arrayFilters = new List<ArrayFilterDefinition<Core.Entities.Poll>>
+        {
+            new BsonDocumentArrayFilterDefinition<Core.Entities.Poll>(new BsonDocument("i._id",
+                ObjectId.Parse(pollPageId))),
+        };
+
+        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId);
+        var result =
+            await _collection.UpdateOneAsync(filter, update, new UpdateOptions { ArrayFilters = arrayFilters }, ct);
+
+        if (result.ModifiedCount == 0)
+        {
+            throw new InvalidOperationException("Вопрос не был добавлен");
+        }
+
+        return question.QuestionId;
     }
 }

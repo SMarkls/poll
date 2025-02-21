@@ -4,13 +4,17 @@ using Poll.Core.Consts.Authorization;
 
 namespace Poll.Api.Controllers;
 
+/// <summary>
+/// Абстрактный контроллер для общей логики.
+/// </summary>
 [ApiController]
 [Route("[controller]")]
 [ProducesResponseType(typeof(ApiErrorModel), StatusCodes.Status400BadRequest)]
 public abstract class BaseController : Controller
 {
+    protected CancellationToken Ct => HttpContext.RequestAborted;
     private CurrentUser? _currentUser;
-    protected CurrentUser CurrentUser => _currentUser ??= GetCurrentUser();
+    public CurrentUser CurrentUser => _currentUser ??= GetCurrentUser();
     private CurrentUser GetCurrentUser()
     {
         var user = HttpContext.User;

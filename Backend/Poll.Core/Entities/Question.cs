@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 using Poll.Core.Entities.Answers;
 using Poll.Core.Entities.Enums;
 using Poll.Core.Entities.Variants;
+using Poll.Core.Entities.ViewRules;
 
 namespace Poll.Core.Entities;
 
@@ -15,12 +16,8 @@ public class Question
     /// Идентификатор вопроса.
     /// </summary>
     [BsonId]
-    public ObjectId QuestionId { get; set; }
-
-    /// <summary>
-    /// Идентификатор страницы, на которой находится опрос.
-    /// </summary>
-    public string PageId { get; init; }
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string QuestionId { get; set; }
 
     /// <summary>
     /// Текст вопроса.
@@ -33,12 +30,12 @@ public class Question
     public QuestionType QuestionType { get; init; }
 
     /// <summary>
-    /// Ответы на вопрос.
-    /// </summary> 
-    public List<QuestionAnswer> Answers { get; init; } = [];
-
-    /// <summary>
     /// Варианты ответа.
     /// </summary>
-    public List<IBaseVariants> Variants { get; init; }
+    public BaseVariants Variants { get; init; }
+
+    /// <summary>
+    /// Правило отображения вопроса.
+    /// </summary>
+    public ViewRule? ViewRule { get; init; } 
 }

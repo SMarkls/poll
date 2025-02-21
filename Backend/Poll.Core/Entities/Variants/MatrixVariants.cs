@@ -1,9 +1,6 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
+﻿namespace Poll.Core.Entities.Variants;
 
-namespace Poll.Core.Entities.Variants;
-
-[BsonNoId]
-public class MatrixVariants : IBaseVariants
+public class MatrixVariants : BaseVariants
 {
     public List<string> Horizontal { get; init; }
     public List<string> Vertical { get; init; }

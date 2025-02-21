@@ -1,8 +1,12 @@
+using Poll.Api.Models.Dto.Rule;
 using Poll.Core.Entities.Enums;
 using Poll.Core.Entities.Variants;
 
-namespace Poll.Api.Models.Dto;
+namespace Poll.Api.Models.Dto.Question;
 
+/// <summary>
+/// Объект передачи данных получения вопроса.
+/// </summary>
 public class GetQuestionDto
 {
     /// <summary>
@@ -28,5 +32,10 @@ public class GetQuestionDto
     /// <summary>
     /// Варианты ответа.
     /// </summary>
-    public List<IBaseVariants> Variants { get; init; }
+    public BaseVariants Variants { get; init; }
+
+    /// <summary>
+    /// Правило отображения.
+    /// </summary>
+    public ViewRuleDto? ViewRule { get; init; }
 }

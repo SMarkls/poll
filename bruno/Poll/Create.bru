@@ -1,0 +1,22 @@
+meta {
+  name: Create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{BASE_URL}}/Poll
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "pollName": "Самый важный опрос",
+    "startTime": "2025-01-27T12:27:16.633Z",
+    "endTime": "2026-01-27T12:27:16.633Z",
+    "isOver": false,
+    "departmentIds": [],
+    "employeeIds": []
+  }
+}

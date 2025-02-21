@@ -1,5 +1,10 @@
+using Poll.Api.Models.Dto.PollPage;
+
 namespace Poll.Api.Models.Dto.Poll;
 
+/// <summary>
+/// Объект передачи данных получения опроса.
+/// </summary>
 public class GetPollDto
 {
     /// <summary>
@@ -23,32 +28,12 @@ public class GetPollDto
     public DateTime? EndTime { get; init; }
 
     /// <summary>
-    /// Дата и время создания опроса.
-    /// </summary>
-    public DateTime CreatedAt { get; init; }
-
-    /// <summary>
     /// Флаг - закрыт ли опрос на данный момент.
     /// </summary>
     public bool IsOver { get; init; }
 
     /// <summary>
-    /// Идентификаторы отделов, сотрудники которых могут пройти опрос.
-    /// </summary>
-    public List<string>? DepartmentIds { get; init; }
-
-    /// <summary>
-    /// Список сотрудников, которые должны пройти опрос.
-    /// </summary>
-    public List<string>? EmployeeIds { get; init; }
-
-    /// <summary>
     /// Список идентификаторов страниц с вопросами.
     /// </summary>
-    public List<string> Pages { get; init; } = [];
-
-    /// <summary>
-    /// Список идентификаторов сотрудников, прошедших опрос.
-    /// </summary>
-    public List<string> PassedEmployees { get; init; } = [];
+    public List<GetPollPageDto> Pages { get; init; } = [];
 }

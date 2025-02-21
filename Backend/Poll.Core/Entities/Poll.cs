@@ -12,7 +12,8 @@ public class Poll
     /// Идентификатор опроса.
     /// </summary>
     [BsonId]
-    public ObjectId PollId { get; init; }
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string PollId { get; init; }
 
     /// <summary>
     /// Название опроса.
@@ -63,4 +64,11 @@ public class Poll
     /// Список идентификаторов сотрудников, прошедших опрос.
     /// </summary>
     public List<string> PassedEmployees { get; init; } = [];
+
+    /// <summary>
+    /// Ответы на вопросы.
+    /// Ключ - идентификатор вопроса.
+    /// Значение - словарь, где ключ - идентификатор сотрудника, значение - ответ, который дал сотрудник.
+    /// </summary>
+    public Dictionary<ObjectId, Dictionary<string, string>> Answers { get; set; }
 }

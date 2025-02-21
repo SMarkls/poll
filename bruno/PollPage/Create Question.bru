@@ -1,0 +1,30 @@
+meta {
+  name: Create Question
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{BASE_URL}}/PollPage/:pollPageId/question/?pollId=679a01bedd5c68534e74c90d
+  body: json
+  auth: inherit
+}
+
+params:query {
+  pollId: 679a01bedd5c68534e74c90d
+}
+
+params:path {
+  pollPageId: 679a0e3eff3bc13181eb542a
+}
+
+body:json {
+  {
+    "questionText": "Первый римский император",
+    "questionType": 0,
+    "variants": {
+      "$type": "LinearVariants",
+      "variants": ["Октавиан Август", "Гай Юлий Цезарь"]
+    }
+  }
+}

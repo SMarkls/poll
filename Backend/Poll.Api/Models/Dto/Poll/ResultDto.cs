@@ -2,6 +2,9 @@ using Poll.Api.Models.Dto.PollPage;
 
 namespace Poll.Api.Models.Dto.Poll;
 
+/// <summary>
+/// Объект передачи данных получения результата прохождения опроса. 
+/// </summary>
 public class ResultDto
 {
     /// <summary>

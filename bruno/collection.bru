@@ -1,0 +1,11 @@
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{AUTHORIZATION}}
+}
+
+vars:pre-request {
+  BASE_URL: http://localhost:5197
+}

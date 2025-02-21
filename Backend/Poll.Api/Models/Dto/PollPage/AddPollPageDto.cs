@@ -1,10 +1,12 @@
-using Poll.Api.Models.Dto.Question;
-
 namespace Poll.Api.Models.Dto.PollPage;
 
+/// <summary>
+/// Объект передачи данных добавления страницы опроса.
+/// </summary>
 public class AddPollPageDto
 {
+    /// <summary>
+    /// Заголовок страницы
+    /// </summary>
     public string PageHeader { get; init; } = "";
-    public List<QuestionDto> Questions { get; init; } = [];
-    public string PollId { get; init; }
 }

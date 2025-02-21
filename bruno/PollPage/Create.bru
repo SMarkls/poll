@@ -1,0 +1,18 @@
+meta {
+  name: Create
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{BASE_URL}}/PollPage
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "pageHeader": "Первая страница!",
+    "pollId": "679a01bedd5c68534e74c90d"
+  }
+}

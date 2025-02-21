@@ -1,11 +1,14 @@
+using MongoDB.Bson.Serialization.Attributes;
+
 namespace Poll.Core.Entities.Ldap;
 
+[BsonIgnoreExtraElements]
 public class LdapUser
 {
     /// <summary>
     /// Идентификатор.
     /// </summary>
-    public Guid ObjectGuid { get; set; }
+    public string ObjectGuid { get; set; }
 
     /// <summary>
     /// Отличительное имя.
@@ -16,11 +19,6 @@ public class LdapUser
     /// Логин.
     /// </summary>
     public string? Login { get; set; }
-
-    /// <summary>
-    /// Электронная почта.
-    /// </summary>
-    public string? Email { get; set; }
 
     /// <summary>
     /// Отображаемое имя.
@@ -58,17 +56,7 @@ public class LdapUser
     public string? Manager { get; set; }
 
     /// <summary>
-    /// Внутренний телефонный номер.
+    /// Роль пользователя
     /// </summary>
-    public string InternalPhone { get; set; }
-
-    /// <summary>
-    /// Сотовый номер телефона.
-    /// </summary>
-    public string Mobile { get; set; }
-
-    /// <summary>
-    /// Контроль учетных записей пользователей.
-    /// </summary>
-    public string? UserAccountControl { get; set; }
+    public UserRole Role { get; set; }
 }
