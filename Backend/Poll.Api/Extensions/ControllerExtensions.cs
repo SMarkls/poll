@@ -1,4 +1,5 @@
 using Poll.Api.Controllers;
+using Poll.Core.Exceptions;
 using Poll.Core.Interfaces;
 
 namespace Poll.Api.Extensions;
@@ -11,7 +12,7 @@ public static class ControllerExtensions
         var ownerId = await pollService.GetOwnerId(pollId, ct);
         if (ownerId != ctler.CurrentUser.Id)
         {
-            throw new Exception("У вас нет доступа к этому ресурсу");
+            throw new PermissionDeniedException();
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Poll.Api.Models.Common;
 using Poll.Core.Consts.Authorization;
+using Poll.Core.Exceptions;
 
 namespace Poll.Api.Controllers;
 
@@ -23,9 +24,37 @@ public abstract class BaseController : Controller
         var role = user.Claims.FirstOrDefault(x => x.Type == Claims.RoleClaimType)?.Value;
         if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(login) || string.IsNullOrEmpty(role))
         {
-            throw new Exception("Пользователь не авторизован");
+            throw new PermissionDeniedException();
         }
 
         return new CurrentUser { Id = id, Login = login, Role = role };
     }
+
+    protected IActionResult Error(ApiErrorModel error)
+    {
+        var method = MethodFactory(this, error.StatusCode);
+        return method(error);
+    }
+
+    protected IActionResult Error(string message, int statusCode)
+    {
+        return Error(new ApiErrorModel
+        {
+            Message = message, StatusCode = statusCode, TraceIdentifier = HttpContext.TraceIdentifier
+        });
+    }
+
+    private static Func<object, IActionResult> MethodFactory(ControllerBase controller, int statusCode)
+    {
+        return statusCode switch
+        {
+            404 => controller.NotFound,
+            400 => controller.BadRequest,
+            401 => controller.Unauthorized,
+            409 => controller.Conflict,
+            422 => controller.UnprocessableEntity,
+            _ => controller.BadRequest
+        };
+    }
+
 }

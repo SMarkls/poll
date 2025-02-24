@@ -1,0 +1,15 @@
+meta {
+  name: Get Porgress
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{BASE_URL}}/:pollId/progress
+  body: none
+  auth: none
+}
+
+params:path {
+  pollId: 
+}

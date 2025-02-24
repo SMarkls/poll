@@ -59,7 +59,7 @@ public class AuthorizationController : BaseController
         var refreshToken = HttpContext.Request.Cookies["RefreshToken"];
         if (refreshToken is null)
         {
-            return Unauthorized("Токен обновления пуст.");
+            return Error("Токен обновления пуст.", 401);
         }
 
         var result = _authorizationService.RefreshToken(refreshToken);

@@ -42,7 +42,7 @@ public class PollPageController : BaseController
         var entity = await _repository.GetPollPage(pollId, pollPageId, Ct);
         if (entity is null)
         {
-            return BadRequest("Страница опроса не найдена");
+            return Error("Страница опроса не найдена", 400);
         }
 
         var dto = _mapper.Map<GetPollPageDto>(entity);
@@ -132,13 +132,13 @@ public class PollPageController : BaseController
         return NoContent();
     }
 
-    // TODO: ПЕРЕДЕЛАТЬ НА ЦЕЛИКОМ ОБНОВЛЕНИЕ ВОПРОСА.
     /// <summary>
     /// Изменить текст вопроса.
     /// </summary>
-    /// <param name="args"></param>
-    /// <param name="pollPageId"></param>
-    /// <param name="text"></param>
+    /// <param name="questionId">Идентификатор вопроса.</param>
+    /// <param name="pollPageId">Идентификатор страницы опроса.</param>
+    /// <param name="dto">Объект передачи данных вопроса.</param>
+    /// <param name="pollId">Идентификатор опроса.</param>
     [HttpPut("{pollPageId}/question/{questionId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> EditQuestionText([FromRoute] string pollId, [FromRoute] string questionId, 

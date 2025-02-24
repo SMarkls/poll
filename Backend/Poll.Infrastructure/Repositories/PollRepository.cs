@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Poll.Core.Entities.Answers;
+using Poll.Core.Exceptions;
 using Poll.Core.Interfaces;
 using Poll.Infrastructure.MongoConnection;
 
@@ -65,7 +66,8 @@ public class PollRepository : IPollRepository
         var storedEntity = await GetById(entity.PollId, ct);
         if (storedEntity is null)
         {
-            throw new Exception("Сущность не найдена в базе данных");
+            _logger.LogError("Опрос с идентификатором {Id} не найден в базе данных", entity.PollId);
+            throw new NotFoundException(entity.PollId, typeof(Core.Entities.Poll));
         }
 
         entity.Pages.AddRange(storedEntity.Pages);
@@ -101,8 +103,6 @@ public class PollRepository : IPollRepository
     public async Task Complete(string pollId, string userId, CompletePollDto dto, CancellationToken ct)
     {
         var updates = new List<WriteModel<Core.Entities.Poll>>();
-    
-        // 1. Добавить пользователя в PassedEmployees (без дубликатов)
         var passedEmployeesUpdate = Builders<Core.Entities.Poll>.Update
             .AddToSet(p => p.PassedEmployees, userId);
     
@@ -110,8 +110,6 @@ public class PollRepository : IPollRepository
             Builders<Core.Entities.Poll>.Filter.Eq(p => p.PollId, pollId),
             passedEmployeesUpdate
         ));
-
-        // 2. Обработка ответов
         foreach (var dtoPage in dto.Pages)
         {
             foreach (var dtoQuestion in dtoPage.Questions)
@@ -129,7 +127,6 @@ public class PollRepository : IPollRepository
             }
         }
 
-        // 3. Выполнить все обновления одной операцией
         await _collection.BulkWriteAsync(updates, cancellationToken: ct);
     }
 

@@ -68,19 +68,22 @@ public class PollController : BaseController
         var entity = await _repository.GetById(pollId, Ct);
         if (entity is null)
         {
-            return BadRequest("Опрос не найден");
+            return Error("Опрос не найден", 400);
         }
 
         var user = await _ldapService.GetFromDb(CurrentUser.Id);
         if (user is null)
         {
-            return Unauthorized("Пользователь не найден");
+            return Error("Пользователь не найден", 404);
         }
 
         if (entity.DepartmentIds.Count != 0 && !entity.DepartmentIds.Contains(user.Department) ||
             entity.EmployeeIds.Count != 0 && !entity.EmployeeIds.Contains(user.ObjectGuid))
         {
-            return BadRequest("Вам недоступен этот опрос");
+            if (entity.OwnerId != CurrentUser.Id)
+            {
+                return Error("Вам недоступен этот опрос", 403);
+            }
         }
 
         var dto = _mapper.Map<GetPollDto>(entity);
@@ -116,7 +119,7 @@ public class PollController : BaseController
             return Ok(_mapper.Map<ResultDto>(entity));
         }
 
-        return BadRequest("Вы не являетесь создателем опроса");
+        return Error("Вы не являетесь создателем опроса", 401);
     }
     
     /// <summary>

@@ -1,7 +1,9 @@
+using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using Poll.Core.Entities;
+using Poll.Core.Exceptions;
 using Poll.Core.Interfaces;
 using Poll.Infrastructure.MongoConnection;
 
@@ -9,9 +11,11 @@ namespace Poll.Infrastructure.Repositories;
 
 public class PollPageRepository : IPollPageRepository
 {
+    private readonly ILogger<PollPageRepository> _logger;
     private readonly IMongoCollection<Core.Entities.Poll> _collection;
-    public PollPageRepository(IMongoCollectionFactory<Core.Entities.Poll> collectionFactory)
+    public PollPageRepository(IMongoCollectionFactory<Core.Entities.Poll> collectionFactory, ILogger<PollPageRepository> logger)
     {
+        _logger = logger;
         _collection = collectionFactory.GetCollection();
     }
 
@@ -75,7 +79,6 @@ public class PollPageRepository : IPollPageRepository
     public async Task UpdateQuestion(string pollId, string pollPageId, string questionId, Question entity, 
         CancellationToken ct)
     {
-        
         var filter = Builders<Core.Entities.Poll>.Filter.And(
             Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId),
             Builders<Core.Entities.Poll>.Filter.ElemMatch(
@@ -100,7 +103,8 @@ public class PollPageRepository : IPollPageRepository
 
         if (updateDefinitions.Count == 0)
         {
-            throw new InvalidOperationException("Нет полей для обновления");
+            _logger.LogError("Нет полей для обновления");
+            throw new AppException("Нет полей для обновления");
         }
 
         var combinedUpdate = updateBuilder.Combine(updateDefinitions);
@@ -118,7 +122,8 @@ public class PollPageRepository : IPollPageRepository
         );
         if (result.MatchedCount == 0)
         {
-            throw new InvalidOperationException("Документ не найден");
+            _logger.LogError("В процессе обновления ни один документ не был обновлен");
+            throw new AppException("Документ не найден");
         }
     }
 
@@ -139,7 +144,8 @@ public class PollPageRepository : IPollPageRepository
 
         if (result.ModifiedCount == 0)
         {
-            throw new InvalidOperationException("Вопрос не был добавлен");
+            _logger.LogError("Вопрос не было добавлен");
+            throw new AppException("Вопрос не был добавлен");
         }
 
         return question.QuestionId;

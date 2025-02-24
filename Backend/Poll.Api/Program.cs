@@ -63,6 +63,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.Use(async (context, next) => {
+    using (NLog.ScopeContext.PushProperty("TraceId", context.TraceIdentifier))
+    {
+        await next();
+    }
+});
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<UserSetMiddleware>();
 

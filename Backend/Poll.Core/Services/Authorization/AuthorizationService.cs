@@ -7,6 +7,7 @@ using Poll.Core.Configuration.Models;
 using Poll.Core.Interfaces;
 using Poll.Core.Consts.Authorization;
 using Poll.Core.Entities.Ldap;
+using Poll.Core.Exceptions;
 
 namespace Poll.Core.Services.Authorization;
 
@@ -38,11 +39,11 @@ public class AuthorizationService : IAuthorizationService
         var user = await _ldapService.Login(login, password);
         if (user is null)
         {
-            throw new Exception("Неправильный логин или пароль");
+            throw new AppException("Неправильный логин или пароль");
         }
 
-        var accessToken = CreateJwtToken(user.ObjectGuid.ToString(), login, user.Role, true);
-        var refreshToken = CreateJwtToken(user.ObjectGuid.ToString(), login, user.Role, false);
+        var accessToken = CreateJwtToken(user.ObjectGuid, login, user.Role, true);
+        var refreshToken = CreateJwtToken(user.ObjectGuid, login, user.Role, false);
         return new LoginResult(accessToken, refreshToken);
     }
 
@@ -50,7 +51,7 @@ public class AuthorizationService : IAuthorizationService
     {
         if (!ValidateToken(refreshToken, out string? id, out string? login, out UserRole role))
         {
-            throw new Exception("Неверный токен обновления");
+            throw new AppException("Неверный токен обновления");
         }
 
         var accessToken = CreateJwtToken(id, login, role, true);

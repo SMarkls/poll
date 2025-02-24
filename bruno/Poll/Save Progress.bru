@@ -1,0 +1,39 @@
+meta {
+  name: Save Progress
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{BASE_URL}}/:pollId/progress
+  body: json
+  auth: inherit
+}
+
+params:path {
+  pollId: 
+}
+
+body:json {
+  {
+    "pages": [
+      {
+        "pageId": "679a0e3eff3bc13181eb542a",
+        "questions": [
+          {
+            "questionId": "67a1cbd8e071c11a1426cb8d",
+            "value": "0"
+          },
+          {
+            "questionId": "67aa10aa143736d8a430c458",
+            "value": "1"
+          },
+          {
+            "questionId": "67aa10c0143736d8a430c459",
+            "value": "1"
+          }
+        ]
+      }
+    ]
+  }
+}

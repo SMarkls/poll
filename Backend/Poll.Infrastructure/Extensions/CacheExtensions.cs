@@ -1,21 +1,24 @@
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Poll.Infrastructure.Extensions;
 
 public static class CacheExtensions
 {
-    public static async Task<T?> GetValue<T>(this IDistributedCache cache, string key, CancellationToken ct)
+    public static async Task<T?> GetValue<T>(this IDistributedCache cache, string key, CancellationToken ct, ILogger? logger = default)
     {
         try
         {
             var value = await cache.GetStringAsync(key, ct);
-            _ = cache.RefreshAsync(key, ct);
+            await cache.RefreshAsync(key, ct);
             if (string.IsNullOrEmpty(value))
             {
                 return default;
             }
 
+            logger?.LogInformation("Значение {Key} получено из кэша", key);
+            logger?.LogDebug("Значение {Key}: {Value}", key, value);
             if (typeof(T) == typeof(string) && value is T val)
             {
                 return val;

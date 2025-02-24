@@ -24,11 +24,14 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Content Update="nlog.config">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
-      <Content Update="nlog.config">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Content Include="..\Dockerfile">
+        <Link>Dockerfile</Link>
       </Content>
     </ItemGroup>
 

@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using Poll.Core.Entities.Answers;
 using Poll.Core.Interfaces;
 using Poll.Infrastructure.Extensions;
@@ -10,22 +11,25 @@ public class PollCachedRepository : IPollRepository
 {
     private readonly IPollRepository _repository;
     private readonly IDistributedCache _cache;
+    private readonly ILogger<PollCachedRepository> _loggger;
     private const uint LifeTime = 60;
 
-    public PollCachedRepository(IPollRepository repository, IDistributedCache cache)
+    public PollCachedRepository(IPollRepository repository, IDistributedCache cache, ILogger<PollCachedRepository> loggger)
     {
         _repository = repository;
         _cache = cache;
+        _loggger = loggger;
     }
 
     public async Task<Core.Entities.Poll?> GetById(string id, CancellationToken ct)
     {
-        var value = await _cache.GetValue<Core.Entities.Poll>(id, ct);
+        var value = await _cache.GetValue<Core.Entities.Poll>(id, ct, _loggger);
         if (value is not null)
         {
             return value;
         }
 
+        _loggger.LogDebug("Значение по ключу {Key} в кэше не найдено", id);
         var result = await _repository.GetById(id, ct);
         if (result is null)
         {
@@ -68,7 +72,7 @@ public class PollCachedRepository : IPollRepository
     public async Task<Core.Entities.Poll> Update(Core.Entities.Poll entity, CancellationToken ct)
     {
         var result = await _repository.Update(entity, ct);
-        await _cache.SetValue(entity.PollId.ToString(), result,  LifeTime, ct);
+        await _cache.SetValue(entity.PollId, result,  LifeTime, ct);
         return result;
     }
 
