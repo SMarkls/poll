@@ -32,9 +32,9 @@ public class LdapService : ILdapService
         "useraccountcontrol"
     ];
 
-    public LdapService(IOptions<LdapSettings> settings, IMongoCollectionFactory<LdapUser> factory,
+    public LdapService(IOptions<LdapSettings> settings, IMongoCollectionFactory<LdapUser> factory
 #if DEBUG
-         IOptions<TestingSettings> testingSettings
+         ,IOptions<TestingSettings> testingSettings
 #endif
        )
     {
