@@ -1,6 +1,42 @@
 ﻿services:
-  webapplication1:
-    image: webapplication1
-    build:
-      context: .
-      dockerfile: WebApplication1/Dockerfile
+  backend:
+    image: localhost/poll-backend:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - type: bind
+        source: ./backend-volume/appsettings.json
+        target: /app/appsettings.json
+        read_only: true
+  mongo:
+    image: docker.io/mongo:4.4.18
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+  mongo-express:
+    image: docker.io/mongo-express
+    restart: always
+    depends_on:
+      - mongo
+    ports:
+      - "4444:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+
+  redis:
+    image: docker.io/redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    environment:
+      REDIS_ARGS: --requirepass secret
+    restart: always
+    volumes:
+      - type: bind
+        source: ./redis-volume
+        target: /data
