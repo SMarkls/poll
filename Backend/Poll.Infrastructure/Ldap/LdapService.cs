@@ -50,6 +50,13 @@ public class LdapService : ILdapService
 #if DEBUG
         if (TryDebugLogin(login, out var testUser))
         {
+            var fromDb = await GetFromDb(testUser.ObjectGuid);
+            if (fromDb is not null)
+            {
+                return fromDb;
+            }
+
+            await AddToDb(testUser);
             return testUser;
         }
 #endif
@@ -188,7 +195,7 @@ public class LdapService : ILdapService
         {
              user = new LdapUser
              {
-                 ObjectGuid = "d54fb117-2a43-4f89-a6f6-c2b3dd5dffa3",
+                 ObjectGuid = new Guid("BD75729C-87E6-473B-B6B3-9190B55F3FF8").ToString(),
                  DisplayName = login,
                  FirstName = "Тестер",
                  LastName = "Тестовый",
@@ -205,7 +212,7 @@ public class LdapService : ILdapService
         {
               user = new LdapUser
               {
-                  ObjectGuid = "d54fb117-2a43-4f89-a6f6-c2b3dd5dffa3",
+                  ObjectGuid = new Guid("6DCB1DB6-9825-4C26-A04F-E5C394A4D469").ToString(),
                   DisplayName = login,
                   FirstName = "Тестер",
                   LastName = "Тестовый",
