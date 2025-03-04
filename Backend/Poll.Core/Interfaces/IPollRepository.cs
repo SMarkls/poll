@@ -16,4 +16,5 @@ public interface IPollRepository
     Task Complete(string pollId, string userId, CompletePollDto dto, CancellationToken ct);
     Task PersistProgress(string pollId, string userId, CompletePollDto dto, CancellationToken ct);
     Task<CompletePollDto?> GetProgress(string pollId, string userId, CancellationToken ct);
+    Task<Dictionary<string, string>?> GetEdit(string pollId, string userId, CancellationToken ct);
 }

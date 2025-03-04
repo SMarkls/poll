@@ -103,6 +103,8 @@ public class PollRepository : IPollRepository
     public async Task Complete(string pollId, string userId, CompletePollDto dto, CancellationToken ct)
     {
         var updates = new List<WriteModel<Core.Entities.Poll>>();
+    
+        // 1. Добавляем сотрудника в список прошедших опрос
         var passedEmployeesUpdate = Builders<Core.Entities.Poll>.Update
             .AddToSet(p => p.PassedEmployees, userId);
     
@@ -110,12 +112,14 @@ public class PollRepository : IPollRepository
             Builders<Core.Entities.Poll>.Filter.Eq(p => p.PollId, pollId),
             passedEmployeesUpdate
         ));
+
+        // 2. Обрабатываем ответы сотрудника
         foreach (var dtoPage in dto.Pages)
         {
             foreach (var dtoQuestion in dtoPage.Questions)
             {
                 var questionId = ObjectId.Parse(dtoQuestion.QuestionId);
-                var answerPath = $"Answers.{questionId}.{userId}";
+                var answerPath = $"Answers.{userId}.{questionId}";
 
                 var answerUpdate = Builders<Core.Entities.Poll>.Update
                     .Set(answerPath, dtoQuestion.Value);
@@ -135,4 +139,25 @@ public class PollRepository : IPollRepository
 
     public Task<CompletePollDto?> GetProgress(string pollId, string userId, CancellationToken ct) =>
         Task.FromResult<CompletePollDto?>(null);
+
+    public async Task<Dictionary<string, string>?> GetEdit(string pollId, string userId, CancellationToken ct)
+    {
+        var projection = Builders<Core.Entities.Poll>.Projection.Include(x => x.Answers[userId]);
+        var filter = Builders<Core.Entities.Poll>.Filter.Eq(x => x.PollId, pollId);
+        var result = await _collection.FindAsync(filter, new FindOptions<Core.Entities.Poll> { Projection = projection },
+            cancellationToken: ct);
+        if (result is null)
+        {
+            throw new AppException("Получить результат прохождения опроса не получилось");
+        }
+
+        var poll = await result.FirstOrDefaultAsync(cancellationToken: ct);
+        if (poll is null)
+        {
+            throw new AppException("Получить результат прохождения опроса не получилось");
+        }
+
+        var dict = poll.Answers.FirstOrDefault(x => x.Key == userId).Value;
+        return dict.ToDictionary(x => x.Key.ToString(), x => x.Value);
+    }
 }

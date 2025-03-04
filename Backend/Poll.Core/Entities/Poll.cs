@@ -39,6 +39,11 @@ public class Poll
     /// Флаг - закрыт ли опрос на данный момент.
     /// </summary>
     public bool IsOver { get; init; }
+
+    /// <summary>
+    /// Флаг - можно ли менять ответы на вопросы прохождения.
+    /// </summary>
+    public bool IsAnswersEditable { get; init; }
  
     /// <summary>
     /// Идентификатор создателя опроса.
@@ -67,8 +72,8 @@ public class Poll
 
     /// <summary>
     /// Ответы на вопросы.
-    /// Ключ - идентификатор вопроса.
-    /// Значение - словарь, где ключ - идентификатор сотрудника, значение - ответ, который дал сотрудник.
+    /// Ключ - идентификатор сотрудника.
+    /// Значение - словарь, где ключ - идентификатор вопроса, значение - ответ, который дал сотрудник.
     /// </summary>
-    public Dictionary<ObjectId, Dictionary<string, string>> Answers { get; set; }
+    public Dictionary<string, Dictionary<ObjectId, string>> Answers { get; set; }
 }

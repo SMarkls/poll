@@ -24,6 +24,11 @@ public class AddPollDto
     /// Флаг - закрыт ли опрос на данный момент.
     /// </summary>
     public bool IsOver { get; init; }
+
+    /// <summary>
+    /// Флаг - можно ли менять ответы на вопросы после прохождения опроса.
+    /// </summary>
+    public bool IsAnswersEditable { get; init; }
  
     /// <summary>
     /// Идентификатор создателя опроса.

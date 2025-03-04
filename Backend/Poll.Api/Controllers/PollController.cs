@@ -175,4 +175,18 @@ public class PollController : BaseController
         await _repository.Update(entity, Ct);
         return NoContent();
     }
+
+    /// <summary>
+    /// Получить данные, которые пользователь отправил в качестве ответа.
+    /// </summary>
+    /// <param name="pollId">Идентификатор опроса.</param>
+    /// <returns>Словарь, где ключ - идентификатор вопроса, значение - ответ.</returns>
+    [HttpGet("{pollId}/edit")]
+    [ProducesResponseType<Dictionary<string, string>>(StatusCodes.Status200OK)]
+    [AuthorizedOnly]
+    public async Task<IActionResult> GetEdit(string pollId)
+    {
+        var entity = await _repository.GetEdit(pollId, CurrentUser.Id, Ct);
+        return Ok(entity);
+    }
 }

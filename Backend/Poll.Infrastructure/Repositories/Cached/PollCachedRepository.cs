@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Poll.Core.Entities.Answers;
+using Poll.Core.Exceptions;
 using Poll.Core.Interfaces;
 using Poll.Infrastructure.Extensions;
 
@@ -11,25 +12,25 @@ public class PollCachedRepository : IPollRepository
 {
     private readonly IPollRepository _repository;
     private readonly IDistributedCache _cache;
-    private readonly ILogger<PollCachedRepository> _loggger;
+    private readonly ILogger<PollCachedRepository> _logger;
     private const uint LifeTime = 60;
 
-    public PollCachedRepository(IPollRepository repository, IDistributedCache cache, ILogger<PollCachedRepository> loggger)
+    public PollCachedRepository(IPollRepository repository, IDistributedCache cache, ILogger<PollCachedRepository> logger)
     {
         _repository = repository;
         _cache = cache;
-        _loggger = loggger;
+        _logger = logger;
     }
 
     public async Task<Core.Entities.Poll?> GetById(string id, CancellationToken ct)
     {
-        var value = await _cache.GetValue<Core.Entities.Poll>(id, ct, _loggger);
+        var value = await _cache.GetValue<Core.Entities.Poll>(id, ct, _logger);
         if (value is not null)
         {
             return value;
         }
 
-        _loggger.LogDebug("Значение по ключу {Key} в кэше не найдено", id);
+        _logger.LogDebug("Значение по ключу {Key} в кэше не найдено", id);
         var result = await _repository.GetById(id, ct);
         if (result is null)
         {
@@ -97,7 +98,22 @@ public class PollCachedRepository : IPollRepository
 
     public async Task Complete(string pollId, string userId, CompletePollDto dto, CancellationToken ct)
     {
-        await _repository.Complete(pollId, userId, dto, ct);
+        var value = await _cache.GetValue<Core.Entities.Poll>(pollId, ct, _logger);
+        if (value is null)
+        {
+            await _repository.Complete(pollId, userId, dto, ct);
+            await _cache.SetValue(pollId, await _repository.GetById(pollId, ct), LifeTime, ct);
+        }
+        else if (!value.IsAnswersEditable && value.PassedEmployees.Contains(userId))
+        {
+            throw new AppException("Ответы на этот опрос нельзя менять");
+        }
+        else
+        {
+            await _repository.Complete(pollId, userId, dto, ct);
+            value.PassedEmployees.Add(userId);
+            await _cache.SetValue(pollId, value, LifeTime, ct);
+        }
     }
 
     public Task PersistProgress(string pollId, string userId, CompletePollDto dto, CancellationToken ct)
@@ -108,5 +124,10 @@ public class PollCachedRepository : IPollRepository
     public Task<CompletePollDto?> GetProgress(string pollId, string userId, CancellationToken ct)
     {
         return _cache.GetValue<CompletePollDto>($"{pollId}_{userId}", ct);
+    }
+
+    public Task<Dictionary<string, string>?> GetEdit(string pollId, string userId, CancellationToken ct)
+    {
+        return _repository.GetEdit(pollId, userId, ct);
     }
 }
